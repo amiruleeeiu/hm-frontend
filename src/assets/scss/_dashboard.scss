@@ -1,0 +1,23 @@
+.dashboard {
+  display: flex;
+  .sidebar {
+    width: 12%;
+    height: 100vh;
+    background: rgb(27, 158, 152);
+    text-align: center;
+    
+  }
+  .dashboard-content {
+    width: 87%;
+    .header{
+      background: rgb(27, 158, 152);
+      position: fixed;
+      height: 70px;
+      width: 100%;
+      margin-bottom: 100px;
+    }
+    .content{
+      margin-top: 80px;
+    }
+  }
+}

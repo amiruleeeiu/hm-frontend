@@ -1,0 +1,23 @@
+.sidebar-list {
+  margin-top: 50px;
+  margin: 20px;
+  
+  li {
+    padding: 5px 20px;
+
+    margin: 5px 0px;
+
+    a {
+      background: rgb(9, 139, 133);
+      padding: 5px 25px;
+      border-radius: 5px;
+      &:hover {
+        background: rgb(8, 112, 107);
+      }
+    }
+
+    .active {
+      background: rgb(8, 112, 107);
+    }
+  }
+}
