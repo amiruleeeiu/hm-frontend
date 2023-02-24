@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import {
-  Button,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
-  UncontrolledDropdown,
-} from "reactstrap";
+import { Button } from "reactstrap";
+import ActionButton from "../../components/ActionButton";
 import DeleteAlert from "../../components/DeleteAlert";
 import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
 import FromSelect from "../../components/FromSelect";
 import { statusList } from "../../components/list";
 import ReactPagination from "../../components/ReactPagination";
-import { searchFieldsLength, searchUrl } from "../../components/searchFields";
+import { searchUrl } from "../../components/searchFields";
+import SearchHandler from "../../components/SearchHandler";
 import SearchSelect from "../../components/SearchSelect";
 import { selectDataFormate } from "../../components/selectDataFormate";
+import Status from "../../components/Status";
 import {
   useDeleteLocationMutation,
   useGetLocationQuery,
@@ -132,18 +129,24 @@ export default function ManageLocations() {
   };
 
   useEffect(() => {
+    setSearchFields({ ...searchFields, page: page, limit: limit });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit]);
+
+  useEffect(() => {
     if (search) {
       const result = Object.fromEntries([...searchParams]);
 
-      const { upozila_name, district_name, upozila_id } = result;
+      const { upozila_name, location_name, upozila_id, status } = result;
       setSearchFields({
         ...searchFields,
+        status,
         upozila_name,
-        district_name,
+        location_name,
         upozila_id,
       });
-      setSearchTextFields({ ...searchTextFields, upozila_name });
-      setAutCompleteName({ district_name, upozila_id });
+      setSearchTextFields({ ...searchTextFields, location_name });
+      setAutCompleteName({ upozila_id, upozila_name });
     }
   }, []);
 
@@ -158,7 +161,6 @@ export default function ManageLocations() {
     setIsOpen(true);
     setEditItem({});
   };
-
 
   const handleDelete = (id) => {
     deleteLocation(id);
@@ -210,15 +212,9 @@ export default function ManageLocations() {
     }
   };
 
-  useEffect(() => {
-    setSearchFields({ ...searchFields, page: page, limit: limit });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
-
   const handleAllSearch = () => {
     setSearchFields({ ...searchFields, ...searchTextFields });
   };
-
 
   const cancelSearch = () => {
     setSearchFields(searchFieldsName);
@@ -229,7 +225,6 @@ export default function ManageLocations() {
   };
 
   let content = null;
-
 
   if (isLoading && !isSuccess) {
     content = (
@@ -271,41 +266,15 @@ export default function ManageLocations() {
             <td>{item?.upozila_name}</td>
             <td>{item?.location_name}</td>
             <td>
-              <UncontrolledDropdown>
-                <DropdownToggle
-                  caret
-                  color={item?.status ? "success" : "warning"}
-                  style={{ width: "100px" }}
-                >
-                  {item?.status ? "Active" : "Inactive"}
-                </DropdownToggle>
-                <DropdownMenu style={{ width: "100px" }}>
-                  <DropdownItem onClick={() => statusUpdate(item, true)}>
-                    Active
-                  </DropdownItem>
-                  <DropdownItem onClick={() => statusUpdate(item, false)}>
-                    Inactive
-                  </DropdownItem>
-                </DropdownMenu>
-              </UncontrolledDropdown>
+              <Status item={item} statusUpdate={statusUpdate} />
             </td>
             <td className="d-flex gap-2">
-              <Button color="success" onClick={() => handleUpdate(item?.id)}>
-                <span className="d-flex gap-2">
-                  <i className="bi bi-pencil"></i>Edit
-                </span>
-              </Button>{" "}
-              <Button
-                color="danger"
-                onClick={() => {
-                  setIsOpenAlert(true);
-                  setDeleteItemId(item?.id);
-                }}
-              >
-                <span className="d-flex gap-2">
-                  <i className="bi bi-trash"></i>Delete
-                </span>
-              </Button>
+              <ActionButton
+                id={item?.id}
+                handleUpdate={handleUpdate}
+                setDeleteItemId={setDeleteItemId}
+                setIsOpenAlert={setIsOpenAlert}
+              />
             </td>
           </tr>
         ))}
@@ -384,27 +353,12 @@ export default function ManageLocations() {
                   />
                 </th>
 
-                {searchFieldsLength(searchFields, searchTextFields) > 0 ? (
-                  <th className="d-flex align-items-center">
-                    <Button
-                      className="me-2"
-                      color="info"
-                      onClick={handleAllSearch}
-                    >
-                      <span className="d-flex gap-2">
-                        <i className="bi bi-search"></i>
-                        Search
-                      </span>
-                    </Button>{" "}
-                    <Button className="btn btn-danger" onClick={cancelSearch}>
-                      <span className="d-flex gap-2">
-                        <i className="bi bi-x-circle"></i>Cancel
-                      </span>
-                    </Button>
-                  </th>
-                ) : (
-                  <th></th>
-                )}
+                <SearchHandler
+                  searchFields={searchFields}
+                  searchTextFields={searchTextFields}
+                  handleSearch={handleAllSearch}
+                  cancelSearch={cancelSearch}
+                />
               </tr>
             </thead>
             {content}

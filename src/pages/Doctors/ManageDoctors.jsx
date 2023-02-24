@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
-import {
-  Button,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
-  UncontrolledDropdown,
-} from "reactstrap";
+import { Button } from "reactstrap";
+import ActionButton from "../../components/ActionButton";
 import DeleteAlert from "../../components/DeleteAlert";
 import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
 import FromSelect from "../../components/FromSelect";
 import { statusList } from "../../components/list";
 import ReactPagination from "../../components/ReactPagination";
-import { searchFieldsLength, searchUrl } from "../../components/searchFields";
+import { searchUrl } from "../../components/searchFields";
+import SearchHandler from "../../components/SearchHandler";
 import SearchSelect from "../../components/SearchSelect";
+import Status from "../../components/Status";
 import {
   useDeleteDoctorMutation,
   useGetDoctorQuery,
@@ -144,6 +141,11 @@ export default function ManageDoctors() {
   };
 
   useEffect(() => {
+    setSearchFields({ ...searchFields, page: page, limit: limit });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit]);
+
+  useEffect(() => {
     if (search) {
       const result = Object.fromEntries([...searchParams]);
 
@@ -230,11 +232,6 @@ export default function ManageDoctors() {
     setSearchFields({ ...searchFields, ...searchTextFields, [type]: e.value });
   };
 
-  useEffect(() => {
-    setSearchFields({ ...searchFields, page: page, limit: limit });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
-
   const handleAllSearch = () => {
     setSearchFields({ ...searchFields, ...searchTextFields });
   };
@@ -295,41 +292,15 @@ export default function ManageDoctors() {
             <td>{item?.collegeHospital}</td>
             <td>{item?.location}</td>
             <td>
-              <UncontrolledDropdown>
-                <DropdownToggle
-                  caret
-                  color={item?.status ? "success" : "warning"}
-                  style={{ width: "100px" }}
-                >
-                  {item?.status ? "Active" : "Inactive"}
-                </DropdownToggle>
-                <DropdownMenu style={{ width: "100px" }}>
-                  <DropdownItem onClick={() => statusUpdate(item, true)}>
-                    Active
-                  </DropdownItem>
-                  <DropdownItem onClick={() => statusUpdate(item, false)}>
-                    Inactive
-                  </DropdownItem>
-                </DropdownMenu>
-              </UncontrolledDropdown>
+              <Status item={item} statusUpdate={statusUpdate} />
             </td>
             <td className="d-flex gap-2">
-              <Button color="success" onClick={() => handleUpdate(item?.id)}>
-                <span className="d-flex gap-2">
-                  <i className="bi bi-pencil"></i>Edit
-                </span>
-              </Button>{" "}
-              <Button
-                color="danger"
-                onClick={() => {
-                  setIsOpenAlert(true);
-                  setDeleteItemId(item?.id);
-                }}
-              >
-                <span className="d-flex gap-2">
-                  <i className="bi bi-trash"></i>Delete
-                </span>
-              </Button>
+              <ActionButton
+                id={item?.id}
+                handleUpdate={handleUpdate}
+                setDeleteItemId={setDeleteItemId}
+                setIsOpenAlert={setIsOpenAlert}
+              />
             </td>
           </tr>
         ))}
@@ -476,27 +447,12 @@ export default function ManageDoctors() {
                   />
                 </th>
 
-                {searchFieldsLength(searchFields, searchTextFields) > 0 ? (
-                  <th className="d-flex align-items-center justify-content-center">
-                    <Button
-                      className="me-2"
-                      color="info"
-                      onClick={handleAllSearch}
-                    >
-                      <span className="d-flex gap-2">
-                        <i className="bi bi-search"></i>
-                        Search
-                      </span>
-                    </Button>{" "}
-                    <Button className="btn btn-danger" onClick={cancelSearch}>
-                      <span className="d-flex gap-2">
-                        <i className="bi bi-x-circle"></i>Cancel
-                      </span>
-                    </Button>
-                  </th>
-                ) : (
-                  <th></th>
-                )}
+                <SearchHandler
+                  searchFields={searchFields}
+                  searchTextFields={searchTextFields}
+                  handleSearch={handleAllSearch}
+                  cancelSearch={cancelSearch}
+                />
               </tr>
             </thead>
             {content}
