@@ -270,7 +270,7 @@ export default function ManageDoctors() {
     content = (
       <tbody>
         {doctors.data.map((item, index) => (
-          <tr key={index}>
+          <tr key={index} className="align-middle">
             <td>{index + 1}</td>
             <td>
               <Link to={`/doctors/${item?.id}`}>
@@ -282,9 +282,7 @@ export default function ManageDoctors() {
                 </Button>
               </Link>
             </td>
-            <td>
-              {item?.first_name} {item?.last_name}
-            </td>
+            <td>{item?.doctor_name}</td>
             <td>{item?.phone}</td>
             <td>{item?.email}</td>
             <td>{item?.specialest}</td>

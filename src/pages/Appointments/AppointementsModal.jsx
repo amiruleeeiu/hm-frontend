@@ -1,47 +1,45 @@
 import { useFormik } from "formik";
-import React, { useEffect, useState } from "react";
+import { default as React, useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   Button,
+  Label,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Spinner
+  Spinner,
 } from "reactstrap";
 import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
-import { onlyNumber } from "../../components/onlyNumber";
+import FromSelect from "../../components/FromSelect";
 import SearchSelect from "../../components/SearchSelect";
 import { selectDataFormate } from "../../components/selectDataFormate";
-import { useGetDistrictsQuery } from "../../features/districtApi";
-import { useGetLocationssQuery } from "../../features/locationApi";
+import { tConvert } from "../../components/tConvert";
 import {
-  useAddPatientMutation,
-  useUpdatePatientMutation
-} from "../../features/patientApi";
+  useAddAppointmentMutation,
+  useUpdateAppointmentMutation,
+} from "../../features/appointmentApi";
+import { useGetDistrictsQuery } from "../../features/districtApi";
+import { useGetDoctorsQuery } from "../../features/doctorApi";
+import { useGetLocationssQuery } from "../../features/locationApi";
+import { useGetShedulesQuery } from "../../features/sheduleApi";
 import { useGetUpozilasQuery } from "../../features/upozilaApi";
 import DistrictModal from "../Districts/DistrictModal";
 import LocationModal from "../Location/LocationModal";
 import UpozilaModal from "../Upozilas/UpozilaModal";
 
-const autoCompleteFieldName = {
-  location_id: "",
-  district_id: "",
-  upozila_id: "",
-};
-
-export default function PatientModal({
+export default function AppointementsModal({
   isOpen,
   setIsOpen,
   editItem,
   setEditItem,
   setToast,
 }) {
-  const [addPatient, { isLoading, isSuccess }] = useAddPatientMutation();
+  const [addAppointment, { isLoading, isSuccess }] =
+    useAddAppointmentMutation();
 
-  const [autoCompleteName, setAutCompleteName] = useState(
-    autoCompleteFieldName
-  );
   const [isOpenDistrict, setIsOpenDistrict] = useState(false);
   const [isOpenUpozila, setIsOpenUpozila] = useState(false);
   const [isOpenLocation, setIsOpenLocation] = useState(false);
@@ -73,20 +71,52 @@ export default function PatientModal({
       skip: locationSearchUrl?.skip,
     });
 
-  const [
-    updatePatient,
-    { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
-  ] = useUpdatePatientMutation();
-
-  let initial = {
-    name: "",
-    symptoms: "",
-    phone: "",
-    email: "",
-    location_id: "",
+  const [autoCompleteName, setAutCompleteName] = useState({
+    doctor_name: "",
+    doctor_id: "",
+    district_name: "",
     district_id: "",
     upozila_id: "",
-    status: true,
+    upozila_name: "",
+    location_id: "",
+    location_name: "",
+  });
+
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const [totalShedules, setTotalShedules] = useState([]);
+
+  const [appointmentStartTime, setAppointmentStartTime] = useState([]);
+
+  const { data: shedules, isSuccess: isSheduleSuccess } =
+    useGetShedulesQuery("");
+
+  // const[data:doctors]=useGet
+
+  const { data: doctorsList, isSuccess: isDoctorsSucccess } =
+    useGetDoctorsQuery("");
+
+  const [
+    updateAppointment,
+    { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
+  ] = useUpdateAppointmentMutation();
+
+  let initial = {
+    doctor_name: "",
+    doctor_id: "",
+    start_time: "",
+    end_time: "",
+    date: "",
+    patient_name: "",
+    symptoms: "",
+    district_name: "",
+    district_id: "",
+    upozila_id: "",
+    upozila_name: "",
+    location_id: "",
+    location_name: "",
+    status: "Pending",
+    create_at: new Date(),
   };
 
   const formik = useFormik({
@@ -94,24 +124,33 @@ export default function PatientModal({
     validate: (values) => {
       const errors = {};
 
-      if (!values.name) {
-        errors.name = "The Name is Required";
+      if (!values.doctor_id) {
+        errors.doctor_id = "The Doctor Name is Required";
       }
-      if (!values.phone) {
-        errors.phone = "The phone is Required";
+      if (!values.date) {
+        errors.date = "The Date is Required";
       }
-
+      if (!values.patient_name) {
+        errors.patient_name = "The patient name is Required";
+      }
       if (!values.symptoms) {
         errors.symptoms = "The symptoms is Required";
-      }
-      if (!values.location_id) {
-        errors.location_id = "The location is Required";
       }
       if (!values.district_id) {
         errors.district_id = "The district is Required";
       }
       if (!values.upozila_id) {
         errors.upozila_id = "The upozila is Required";
+      }
+      if (!values.location_id) {
+        errors.location_id = "The location is Required";
+      }
+      if (!values.start_time) {
+        errors.start_time = "The Start date is Required";
+      }
+
+      if (!values.end_time) {
+        errors.end_time = "The end date is Required";
       }
 
       return errors;
@@ -120,24 +159,25 @@ export default function PatientModal({
       const currentValues = { ...values };
 
       if (editItem?.id) {
-        updatePatient({ id: editItem?.id, data: currentValues });
+        updateAppointment({ id: editItem?.id, data: currentValues });
       } else {
-        addPatient(currentValues);
+        addAppointment(currentValues);
       }
     },
   });
 
+  console.log(formik.values);
+
   useEffect(() => {
-    if (editItem?.id) {
+    if (editItem?.id || editItem?.district_name) {
       formik.setValues({ ...editItem });
       setAutCompleteName({
-        ...autoCompleteName,
-        location_id: editItem?.location_id ?? "",
-        location_name: editItem?.location_name ?? "",
         district_name: editItem?.district_name ?? "",
         district_id: editItem?.district_id ?? "",
-        upozila_id: editItem?.upozila_id ?? "",
         upozila_name: editItem?.upozila_name ?? "",
+        upozila_id: editItem?.upozila_id ?? "",
+        location_name: editItem?.location_name ?? "",
+        location_id: editItem?.location_id ?? "",
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,8 +186,11 @@ export default function PatientModal({
   const toggle = () => {
     setIsOpen(false);
     formik.resetForm();
-    setAutCompleteName(autoCompleteFieldName);
     setEditItem({});
+    setAutCompleteName({ doctor_id: "", doctor_name: "" });
+    setSelectedDate(null);
+    setTotalShedules([]);
+    setAppointmentStartTime([]);
   };
 
   useEffect(() => {
@@ -167,7 +210,44 @@ export default function PatientModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isUpdateSuccess]);
 
-const handleSearchChange = (e, type) => {
+  const handleDoctorSearchChange = (e) => {
+    if (e) {
+      const { doctor_name, doctor_id } = e;
+      setAutCompleteName({
+        doctor_name,
+        doctor_id,
+      });
+      formik.setValues({
+        ...formik.values,
+        doctor_name,
+        doctor_id,
+      });
+
+      const currentDoctorShedules = shedules?.data
+        .filter((item) => item?.doctor_id === doctor_id)
+        .map((i) => new Date(i?.date));
+      // setSelectedDate(currentDoctorShedules[0]);
+      setTotalShedules(currentDoctorShedules);
+    } else {
+      setAutCompleteName({
+        doctor_name: "",
+        doctor_id: "",
+      });
+      formik.setValues({
+        ...formik.values,
+        doctor_name: "",
+        doctor_id: "",
+        start_time: "",
+        end_time: "",
+        date: "",
+      });
+      setSelectedDate(null);
+      setTotalShedules([]);
+      setAppointmentStartTime([]);
+    }
+  };
+
+  const handleSearchChange = (e, type) => {
     if (e && type === "district_id") {
       setAutCompleteName({
         ...autoCompleteName,
@@ -254,53 +334,152 @@ const handleSearchChange = (e, type) => {
     }
   };
 
+  function removeDuplicates(arr) {
+    return arr.filter((item, index) => {
+      if (
+        arr
+          .slice(index + 1, arr.lenght)
+          .find((i) => i?.doctor_id === item?.doctor_id)
+      ) {
+        return false;
+      } else {
+        return true;
+      }
+    });
+  }
+
+  const handleDate = (date) => {
+    setSelectedDate(date);
+
+    const currentTimeObj = shedules?.data.filter(
+      (i) =>
+        new Date(i?.date).toLocaleDateString() ===
+          new Date(date).toLocaleDateString() &&
+        i?.doctor_id === formik?.values?.doctor_id
+    );
+
+    formik.setValues({
+      ...formik.values,
+      date,
+      start_time: currentTimeObj?.start_time,
+      end_time: currentTimeObj?.end_time,
+    });
+
+    setAppointmentStartTime(
+      currentTimeObj.map((i) => {
+        return {
+          name: tConvert(i?.start_time),
+          end_time: tConvert(i?.end_time),
+          id: i?.id,
+        };
+      })
+    );
+  };
+
+  useEffect(() => {
+    if (formik.values?.start_time) {
+      const currentEndTime = appointmentStartTime.find(
+        (i) => i?.name === formik.values?.start_time
+      );
+
+      formik.setValues({
+        ...formik.values,
+        end_time: currentEndTime?.end_time,
+      });
+    } else {
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formik.values?.start_time]);
+
   console.log(formik.values);
 
   return (
     <form>
       <Modal isOpen={isOpen} size="xl" toggle={toggle}>
         <ModalHeader toggle={toggle}>
-          {editItem?.id ? "Update" : "Add"} District
+          {editItem?.id ? "Update" : "Add"} Appointment
         </ModalHeader>
         <ModalBody>
           <div className="row">
             <div className="col-md-6">
-              <FromInput
-                name="name"
-                id="name"
-                label="Name"
-                placeholder="Name"
-                isTouched={formik.touched.name}
-                invalidFeedback={formik.errors.name}
+              <h5 className="mb-4">Doctor Info</h5>
+
+              <SearchSelect
+                list={selectDataFormate(
+                  isSheduleSuccess,
+                  isSheduleSuccess && removeDuplicates(shedules?.data),
+                  "doctor_name"
+                )}
+                isTouched={formik.touched.doctor_id}
+                invalidFeedback={formik.errors.doctor_id}
                 isValid={formik.isValid}
-                value={formik.values?.name ?? ""}
-                onChange={formik.handleChange}
+                value={formatValue(
+                  autoCompleteName?.doctor_name,
+                  "Search Doctor"
+                )}
+                label="Search Doctor"
+                name="doctor_name"
+                onChange={(e) => handleDoctorSearchChange(e)}
               />
-            </div>
-            <div className="col-md-6">
-              <FromInput
-                name="phone"
-                id="phone"
-                label="Phone"
-                placeholder="Phone"
-                isTouched={formik.touched.phone}
-                invalidFeedback={formik.errors.phone}
+
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <Label>Date</Label>
+                <div style={{ width: "74%" }}>
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={(date) => handleDate(date)}
+                    isClearable
+                    includeDates={totalShedules}
+                    disabled={totalShedules.length === 0 ? true : false}
+                    placeholderText="   Click to select a date"
+                  />
+                  {formik.touched.date &&
+                    !formik.isValid &&
+                    formik.errors.date && (
+                      <p className="text-danger mb-0">{formik.errors.date}</p>
+                    )}
+                </div>
+              </div>
+
+              <FromSelect
+                list={appointmentStartTime ?? []}
+                name="start_time"
+                id="start_time"
+                label="Start Time"
+                isTouched={formik.touched.start_time}
+                invalidFeedback={formik.errors.start_time}
                 isValid={formik.isValid}
-                value={onlyNumber(formik.values?.phone) ?? ""}
+                disabled={appointmentStartTime?.length === 0 ? true : false}
+                placeholder="Start Time"
+                value={formik.values?.start_time ?? "Start Time"}
                 onChange={formik.handleChange}
               />
-            </div>
-            <div className="col-md-6">
               <FromInput
-                name="email"
-                id="email"
-                label="Email"
-                placeholder="Email"
-                value={formik.values?.email ?? ""}
+                name="end_time"
+                id="end_time"
+                label="End Time"
+                disabled={true}
+                isTouched={formik.touched.end_time}
+                invalidFeedback={formik.errors.end_time}
+                isValid={formik.isValid}
+                value={formik.values?.end_time ?? ""}
                 onChange={formik.handleChange}
               />
             </div>
+
             <div className="col-md-6">
+              <h5 className="mb-4">Patient Info</h5>
+              <FromInput
+                name="patient_name"
+                id="patient_name"
+                label="Patient Name"
+                placeholder="Patient Name"
+                isTouched={formik.touched.patient_name}
+                invalidFeedback={formik.errors.patient_name}
+                isValid={formik.isValid}
+                value={formik.values?.patient_name ?? ""}
+                onChange={formik.handleChange}
+              />
               <FromInput
                 name="symptoms"
                 type="textarea"
@@ -313,8 +492,6 @@ const handleSearchChange = (e, type) => {
                 value={formik.values?.symptoms ?? ""}
                 onChange={formik.handleChange}
               />
-            </div>
-            <div className="col-md-6">
               {/* <div className="row px-4">
                 <div className="col-md-11"> */}
               <SearchSelect
@@ -338,8 +515,6 @@ const handleSearchChange = (e, type) => {
                   <i className="bi bi-plus-circle"></i>
                 </Button>
               </SearchSelect>
-            </div>
-            <div className="col-md-6">
               <SearchSelect
                 list={selectDataFormate(
                   isUpozilaSuccess,
@@ -364,15 +539,12 @@ const handleSearchChange = (e, type) => {
                     setEditUpozila({
                       district_id: autoCompleteName?.district_id,
                       district_name: autoCompleteName?.district_name,
-                      status: true,
                     });
                   }}
                 >
                   <i className="bi bi-plus-circle"></i>
                 </Button>
               </SearchSelect>
-            </div>
-            <div className="col-md-6">
               <SearchSelect
                 list={selectDataFormate(
                   isLocationSuccess,
@@ -397,53 +569,12 @@ const handleSearchChange = (e, type) => {
                     setEditLocation({
                       upozila_id: autoCompleteName?.upozila_id,
                       upozila_name: autoCompleteName?.upozila_id,
-                      status: true,
                     });
                   }}
                 >
                   <i className="bi bi-plus-circle"></i>
                 </Button>
               </SearchSelect>
-            </div>
-            <div className="col-md-6">
-              <div className="d-flex align-items-center gap-5">
-                <label>Status</label>
-                <div className="d-flex">
-                  <div>
-                    <input
-                      type="radio"
-                      id="available"
-                      className="me-1"
-                      value={true}
-                      onChange={() =>
-                        formik.setValues({
-                          ...formik.values,
-                          status: true,
-                        })
-                      }
-                      checked={formik?.values?.status}
-                    />
-                    <label for="available">Active</label>
-                  </div>
-
-                  <div>
-                    <input
-                      type="radio"
-                      id="notAvailable"
-                      value={false}
-                      onChange={() =>
-                        formik.setValues({
-                          ...formik.values,
-                          status: false,
-                        })
-                      }
-                      checked={!formik?.values?.status}
-                      className="ms-3 me-1"
-                    />
-                    <label for="notAvailable">Inactive</label>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </ModalBody>

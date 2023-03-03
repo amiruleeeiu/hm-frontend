@@ -29,6 +29,24 @@ export default function Sidebar() {
           </NavLink>
         </li>
         <li>
+          <NavLink to="/shedules" className="text-decoration-none text-white">
+            Dr.Shedule
+          </NavLink>
+        </li>
+        <li>
+          <NavLink
+            to="/appointments"
+            className="text-decoration-none text-white"
+          >
+            Appointments
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/roles" className="text-decoration-none text-white">
+            Roles
+          </NavLink>
+        </li>
+        <li>
           <NavLink to="/districts" className="text-decoration-none text-white">
             District
           </NavLink>

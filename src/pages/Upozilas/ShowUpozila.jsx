@@ -14,7 +14,7 @@ export default function ShowUpozila({
 
   const { district_name, status, upozila_name } = editItem || {};
   return (
-    <Modal isOpen={isOpen} size="" toggle={toggle}>
+    <Modal isOpen={isOpen} size="lg" toggle={toggle}>
       <ModalHeader toggle={toggle}>Upozila detail</ModalHeader>
       <ModalBody>
         <div className="row">

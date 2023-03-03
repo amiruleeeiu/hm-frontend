@@ -248,7 +248,7 @@ export default function ManageLocations() {
     content = (
       <tbody>
         {locations.data.map((item, index) => (
-          <tr key={index}>
+          <tr key={index} className="align-middle">
             <td>{index + 1}</td>
             <td>
               <Button

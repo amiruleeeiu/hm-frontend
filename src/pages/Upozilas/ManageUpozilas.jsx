@@ -9,7 +9,7 @@ import FromInput from "../../components/FromInput";
 import FromSelect from "../../components/FromSelect";
 import { statusList } from "../../components/list";
 import ReactPagination from "../../components/ReactPagination";
-import { searchFieldsLength, searchUrl } from "../../components/searchFields";
+import { searchUrl } from "../../components/searchFields";
 import SearchHandler from "../../components/SearchHandler";
 import SearchSelect from "../../components/SearchSelect";
 import { selectDataFormate } from "../../components/selectDataFormate";
@@ -248,7 +248,7 @@ export default function ManageUpozilas() {
     content = (
       <tbody>
         {upozilas.data.map((item, index) => (
-          <tr key={index}>
+          <tr key={index} className="align-middle">
             <td>{index + 1}</td>
             <td>
               <Button
@@ -269,7 +269,7 @@ export default function ManageUpozilas() {
               <Status item={item} statusUpdate={statusUpdate} />
             </td>
             <td className="d-flex gap-2">
-            <ActionButton
+              <ActionButton
                 id={item?.id}
                 handleUpdate={handleUpdate}
                 setDeleteItemId={setDeleteItemId}

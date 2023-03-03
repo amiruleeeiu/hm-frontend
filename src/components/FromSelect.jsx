@@ -12,6 +12,7 @@ export default function FromSelect({
   onKeyDown,
   isTouched,
   isValid,
+  disabled,
   invalidFeedback,
 }) {
   return (
@@ -22,6 +23,7 @@ export default function FromSelect({
           type="select"
           name={name}
           id={id}
+          disabled={disabled}
           placeholder={placeholder}
           value={value}
           invalid={isTouched && !isValid && invalidFeedback ? true : false}

@@ -14,35 +14,30 @@ import SearchHandler from "../../components/SearchHandler";
 import SearchSelect from "../../components/SearchSelect";
 import { selectDataFormate } from "../../components/selectDataFormate";
 import Status from "../../components/Status";
-import { useGetLocationssQuery } from "../../features/locationApi";
+import { tConvert } from "../../components/tConvert";
+import { useGetDoctorsQuery } from "../../features/doctorApi";
 import {
-  useDeletePatientMutation,
-  useGetPatientQuery,
-  useGetPatientsQuery,
-  useUpdatePatientMutation,
-} from "../../features/patientApi";
-import PatientModal from "./PatientModal";
+  useDeleteSheduleMutation,
+  useGetSheduleQuery,
+  useGetShedulesQuery,
+  useUpdateSheduleMutation,
+} from "../../features/sheduleApi";
+import SheudlesModal from "./SheudlesModal";
+import ShowShedule from "./ShowShedule";
 
 const searchTextFieldsName = {
-  name: "",
-  phone: "",
-  symptoms: "",
+  date: "",
 };
 
 const searchFieldsName = {
-  name: "",
-  phone: "",
-  symptoms: "",
+  date: "",
+  doctor_name: "",
+  doctor_id: "",
   page: 1,
   limit: 10,
 };
 
-const autoCompleteFieldName = {
-  location_name: "",
-  location_id: "",
-};
-
-export default function ManagePatients() {
+export default function ManageShedules() {
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenAlert, setIsOpenAlert] = useState(false);
   const [editItem, setEditItem] = useState({});
@@ -53,9 +48,9 @@ export default function ManagePatients() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchFields, setSearchFields] = useState(searchFieldsName);
-  const [autoCompleteName, setAutCompleteName] = useState(
-    autoCompleteFieldName
-  );
+  const [autoCompleteName, setAutCompleteName] = useState({
+    doctor_id: "",
+  });
 
   const [searchTextFields, setSearchTextFields] =
     useState(searchTextFieldsName);
@@ -65,38 +60,40 @@ export default function ManagePatients() {
   const [toastObj, setToast] = useState({});
   const [isOpenShow, setIsOpenShow] = useState(false);
 
+  const { data: doctors, isSuccess: isDistrictSuccess } = useGetDoctorsQuery(
+    "",
+    {
+      refetchOnMountorArgChange: true,
+    }
+  );
+
   const [urlString, setUrlString] = useState(``);
   const {
-    data: patients,
+    data: shedules,
     isLoading,
     isSuccess,
-  } = useGetPatientsQuery(urlString, { refetchOnMountorArgChange: true });
+  } = useGetShedulesQuery(urlString, { refetchOnMountorArgChange: true });
 
   const [doctorId, setDoctorId] = useState("");
   const {
-    data: showPatient,
-    isSuccess: isShowPatientSuccess,
+    data: showShedule,
+    isSuccess: isShowSheduleSuccess,
     isFetching,
     refetch,
-  } = useGetPatientQuery(doctorId, {
+  } = useGetSheduleQuery(doctorId, {
     refetchOnMountorArgChange: true,
   });
 
-  const [deletePatient, { isSuccess: isDeleteSuccess }] =
-    useDeletePatientMutation();
+  const [deleteShedule, { isSuccess: isDeleteSuccess }] =
+    useDeleteSheduleMutation();
 
   const [
-    updatePatient,
+    updateShedule,
     { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
-  ] = useUpdatePatientMutation();
-
-  const { data: locationList, isSuccess: isLocationSuccess } =
-    useGetLocationssQuery("", {
-      refetchOnMountorArgChange: true,
-    });
+  ] = useUpdateSheduleMutation();
 
   const statusUpdate = (data, e) => {
-    updatePatient({ id: data?.id, data: { ...data, status: e } });
+    updateShedule({ id: data?.id, data: { ...data, status: e } });
   };
 
   useEffect(() => {
@@ -125,6 +122,15 @@ export default function ManagePatients() {
     }
   };
 
+  const showDistrict = (id) => {
+    setIsOpenShow(true);
+    if (doctorId === id) {
+      refetch();
+    } else {
+      setDoctorId(id);
+    }
+  };
+
   useEffect(() => {
     setSearchFields({ ...searchFields, page: page, limit: limit });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,30 +140,24 @@ export default function ManagePatients() {
     if (search) {
       const result = Object.fromEntries([...searchParams]);
 
-      const { location_name, location_id, phone, name, symptoms } = result;
-
-      console.log(location_id);
+      const { upozila_name, doctor_name, doctor_id } = result;
       setSearchFields({
         ...searchFields,
-        location_name,
-        location_id,
-        phone,
-        name,
-        symptoms,
+        upozila_name,
+        doctor_name,
+        doctor_id,
       });
-      setSearchTextFields({ ...searchTextFields, phone, name, symptoms });
-      setAutCompleteName({ ...autoCompleteName, location_name, location_id });
+      setSearchTextFields({ ...searchTextFields, upozila_name });
+      setAutCompleteName({ doctor_name, doctor_id });
     }
   }, []);
 
-  console.log(searchFields);
-
   useEffect(() => {
-    if (!isFetching && isShowPatientSuccess) {
-      setEditItem(showPatient);
+    if (!isFetching && isShowSheduleSuccess) {
+      setEditItem(showShedule);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFetching, isShowPatientSuccess, showPatient]);
+  }, [isFetching, isShowSheduleSuccess, showShedule]);
 
   const handleAddDoctor = () => {
     setIsOpen(true);
@@ -165,7 +165,7 @@ export default function ManagePatients() {
   };
 
   const handleDelete = (id) => {
-    deletePatient(id);
+    deleteShedule(id);
     setIsOpenAlert(false);
   };
 
@@ -186,41 +186,32 @@ export default function ManagePatients() {
     }
   };
 
-  const handleSearchChange = (e) => {
-    console.log(e);
-    if (e) {
-      setAutCompleteName({
-        ...autoCompleteName,
-        location_name: e.label,
-        location_id: e.id,
-      });
-      setSearchFields({
-        ...searchFields,
-        ...searchTextFields,
-        location_name: e.label,
-        location_id: e.id,
-      });
-    } else {
-      setAutCompleteName({
-        ...autoCompleteName,
-        location_name: "",
-        location_id: "",
-      });
-      setSearchFields({
-        ...searchFields,
-        ...searchTextFields,
-        location_name: "",
-        location_id: "",
-      });
-    }
-  };
-
   const handleOnChangeSelect = (e) => {
     setSearchFields({
       ...searchFields,
       ...searchTextFields,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleSearchChange = (e) => {
+    if (e) {
+      setAutCompleteName({ doctor_id: e.id, doctor_name: e.doctor_name });
+      setSearchFields({
+        ...searchFields,
+        ...searchTextFields,
+        doctor_id: e.id,
+        doctor_name: e.doctor_name,
+      });
+    } else {
+      setAutCompleteName({ doctor_id: "", doctor_name: "" });
+      setSearchFields({
+        ...searchFields,
+        ...searchTextFields,
+        doctor_id: "",
+        doctor_name: "",
+      });
+    }
   };
 
   const handleAllSearch = () => {
@@ -230,7 +221,7 @@ export default function ManagePatients() {
   const cancelSearch = () => {
     setSearchFields(searchFieldsName);
     setSearchTextFields(searchTextFieldsName);
-    setAutCompleteName(autoCompleteFieldName);
+    setAutCompleteName({ doctor_id: "", doctor_name: "" });
     setPage(1);
     setLimit(10);
   };
@@ -246,35 +237,42 @@ export default function ManagePatients() {
       </tbody>
     );
   }
-  if (!isLoading && isSuccess && patients.data?.length === 0) {
+  if (!isLoading && isSuccess && shedules.data?.length === 0) {
     content = (
       <tbody>
         <tr>
-          <td>There is no Patient.</td>
+          <td>There is no doctos.</td>
         </tr>
       </tbody>
     );
   }
-  if (!isLoading && isSuccess && patients.data?.length > 0) {
+  if (!isLoading && isSuccess && shedules.data?.length > 0) {
     content = (
       <tbody>
-        {patients.data.map((item, index) => (
+        {shedules.data.map((item, index) => (
           <tr key={index} className="align-middle">
             <td>{index + 1}</td>
             <td>
-              <Link to={`/patients/${item?.id}`}>
-                <Button className="me-2" color="primary" outline>
-                  <span className="d-flex gap-2">
-                    <i className="bi bi-info-circle"></i>
-                    Info
-                  </span>
-                </Button>
+              <Button
+                className="me-2"
+                color="primary"
+                outline
+                onClick={() => showDistrict(item?.id)}
+              >
+                <span className="d-flex gap-2">
+                  <i className="bi bi-info-circle"></i>
+                  Info
+                </span>
+              </Button>
+            </td>
+            <td>
+              <Link to={`/doctors/${item?.doctor_id}`}>
+                {item?.doctor_name}
               </Link>
             </td>
-            <td>{item?.name}</td>
-            <td>{item?.phone}</td>
-            <td>{item?.symptoms}</td>
-            <td>{item?.location_name}</td>
+            <td>{item?.date}</td>
+            <td>{tConvert(item?.start_time)}</td>
+            <td>{tConvert(item?.end_time)}</td>
             <td>
               <Status item={item} statusUpdate={statusUpdate} />
             </td>
@@ -295,7 +293,7 @@ export default function ManagePatients() {
   return (
     <>
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h5>Patients</h5>
+        <h5>Shedules</h5>
         <button
           onClick={handleAddDoctor}
           type="button"
@@ -303,7 +301,7 @@ export default function ManagePatients() {
         >
           <span className="d-flex gap-2">
             <i className="bi bi-plus-circle"></i>
-            Add Patient
+            Add Shedules
           </span>{" "}
         </button>
       </div>
@@ -314,64 +312,46 @@ export default function ManagePatients() {
         >
           <table className="table">
             <thead>
-              <tr>
+              <tr className="align-middle">
                 <th scope="col">SL</th>
-                <th scope="col">Info</th>
-                <th scope="col">Patient Name</th>
-                <th scope="col">Phone</th>
-                <th scope="col">Symptoms</th>
-                <th scope="col">Location</th>
+                <th>Info</th>
+                <th scope="col">Doctor Name</th>
+                <th scope="col">Date</th>
+                <th scope="col">State Time</th>
+                <th scope="col">End Time</th>
+
                 <th scope="col">Status</th>
                 <th scope="col">Actions</th>
               </tr>
-              <tr>
+              <tr className="align-middle">
                 <th></th>
                 <th></th>
-                <td>
-                  <FromInput
-                    name="name"
-                    id="name"
-                    placeholder="Enter Name"
-                    value={searchTextFields?.name}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </td>
-                <td>
-                  <FromInput
-                    name="phone"
-                    id="phone"
-                    placeholder="Enter Phone"
-                    value={searchTextFields?.phone}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </td>
-                <td>
-                  <FromInput
-                    name="symptoms"
-                    id="symptoms"
-                    placeholder="Enter Symptoms"
-                    value={searchTextFields?.symptoms}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </td>
                 <td>
                   <SearchSelect
                     list={selectDataFormate(
-                      isLocationSuccess,
-                      locationList?.data,
-                      "location_name"
+                      isDistrictSuccess,
+                      doctors?.data,
+                      "doctor_name"
                     )}
-                    value={formatValue(
-                      autoCompleteName?.location_name,
-                      "Location"
-                    )}
-                    name="location_id"
-                    onChange={(e) => handleSearchChange(e, "location_id")}
+                    value={formatValue(autoCompleteName?.doctor_name, "Doctor")}
+                    name="doctor_name"
+                    onChange={(e) => handleSearchChange(e)}
                   />
                 </td>
+                <td>
+                  <FromInput
+                    name="date"
+                    id="date"
+                    placeholder="Date"
+                    value={searchTextFields?.date}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                  />
+                </td>
+
+                <td></td>
+                <td></td>
+
                 <th>
                   <FromSelect
                     list={statusList ?? []}
@@ -404,7 +384,7 @@ export default function ManagePatients() {
 
           <ToastContainer />
         </div>
-        <PatientModal
+        <SheudlesModal
           editItem={isOpen && editItem}
           setEditItem={setEditItem}
           setIsOpen={setIsOpen}
@@ -412,15 +392,15 @@ export default function ManagePatients() {
           setToast={setToast}
         />
 
-        {/* <ShowDistrict
+        <ShowShedule
           setIsOpen={setIsOpenShow}
           isOpen={isOpenShow}
           editItem={editItem}
           setEditItem={setEditItem}
-        /> */}
+        />
 
         <ReactPagination
-          total={patients?.total}
+          total={shedules?.total}
           page={page}
           limit={limit}
           setPage={setPage}

@@ -13,6 +13,7 @@ export default function FromInput({
   isValid,
   isTouched,
   onKeyDown,
+  disabled,
 }) {
   return (
     <FormGroup>
@@ -25,6 +26,7 @@ export default function FromInput({
             isValid={isValid}
             isTouched={isTouched}
             onKeyDown={onKeyDown}
+            disabled={disabled}
             id={id}
             name={name}
             placeholder={placeholder}

@@ -14,7 +14,7 @@ export default function ShowLocation({
 
   const { location_name, status, upozila_name } = editItem || {};
   return (
-    <Modal isOpen={isOpen} size="" toggle={toggle}>
+    <Modal isOpen={isOpen} size="lg" toggle={toggle}>
       <ModalHeader toggle={toggle}>Location detail</ModalHeader>
       <ModalBody>
         <div className="row">
