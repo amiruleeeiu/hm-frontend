@@ -20,7 +20,7 @@ export const locationApi = apiSlice.injectEndpoints({
     updateLocation: builder.mutation({
       query: ({ id, data }) => ({
         url: `/locations/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["locations"],
@@ -30,7 +30,7 @@ export const locationApi = apiSlice.injectEndpoints({
         url: `/locations/${id}`,
         method: "DELETE",
       }),
-      providesTags: ["locations"],
+      invalidatesTags: ["locations"],
     }),
   }),
 });

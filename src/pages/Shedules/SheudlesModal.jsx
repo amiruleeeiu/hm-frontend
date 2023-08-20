@@ -82,7 +82,6 @@ export default function SheudlesModal({
     },
   });
 
-  console.log(formik.values);
 
   useEffect(() => {
     if (editItem?.id || editItem?.district_name) {
@@ -120,7 +119,6 @@ export default function SheudlesModal({
   }, [isUpdateSuccess]);
 
   const handleSearchChange = (e) => {
-    console.log(e);
     if (e) {
       setAutCompleteName({ doctor_name: e.label, doctor_id: e.id });
       formik.setValues({

@@ -7,7 +7,6 @@ export default function Doctors() {
   return (
     <Layout title="Doctors Page">
       <div className="doctors ms-3">
-        <Breadcrumb to="/" home="Home" activePage="Doctors" />
         <ManageDoctors />
       </div>
     </Layout>

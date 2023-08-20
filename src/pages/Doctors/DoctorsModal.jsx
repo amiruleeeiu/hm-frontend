@@ -8,11 +8,11 @@ import {
   ModalHeader,
   Spinner,
 } from "reactstrap";
-import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
 import FromSelect from "../../components/FromSelect";
-import { onlyNumber } from "../../components/onlyNumber";
 import SearchSelect from "../../components/SearchSelect";
+import formatValue from "../../components/formatValue";
+import { onlyNumber } from "../../components/onlyNumber";
 import { selectDataFormate } from "../../components/selectDataFormate";
 import { useGetDistrictsQuery } from "../../features/districtApi";
 import {
@@ -23,7 +23,7 @@ import { useGetLocationssQuery } from "../../features/locationApi";
 import { useGetUpozilasQuery } from "../../features/upozilaApi";
 import DistrictModal from "../Districts/DistrictModal";
 import LocationModal from "../Location/LocationModal";
-import UpozilaModal from "../Upozilas/UpozilaModal";
+import SubDistrictModal from "../SubDistrict/SubDistrictModal";
 
 export const options = [
   { value: "Kushtia Medical College", label: "Kushtia Medical College" },
@@ -53,11 +53,11 @@ export const doctorTitles = [
 
 const autoCompleteFieldName = {
   collegeHospital: "",
-  district: "",
+  district_name: "",
   district_id: "",
-  upozila: "",
+  upozila_name: "",
   upozila_id: "",
-  location: "",
+  location_name: "",
 };
 
 export default function DoctorsModal({
@@ -110,7 +110,7 @@ export default function DoctorsModal({
   ] = useUpdateDoctorMutation();
 
   let initial = {
-    first_name: "",
+    doctor_name: "",
     last_name: "",
     phone: "",
     email: "",
@@ -118,9 +118,9 @@ export default function DoctorsModal({
     title: "",
     collegeHospital: "",
     status: true,
-    district: "",
-    upozila: "",
-    location: "",
+    district_name: "",
+    upozila_name: "",
+    location_name: "",
   };
 
   const formik = useFormik({
@@ -128,8 +128,8 @@ export default function DoctorsModal({
     validate: (values) => {
       const errors = {};
 
-      if (!values.first_name) {
-        errors.first_name = "The first Name is Required";
+      if (!values.doctor_name) {
+        errors.doctor_name = "The doctor Name is Required";
       }
       if (!values.phone) {
         errors.phone = "The phone field is Required";
@@ -154,32 +154,35 @@ export default function DoctorsModal({
       if (!values.specialest) {
         errors.specialest = "The specialest field is Required";
       }
-      if (!values.district) {
-        errors.district = "The district field is Required";
+      if (!values.district_name) {
+        errors.district_name = "The district field is Required";
       }
       return errors;
     },
     onSubmit: (values) => {
       const currentValues = { ...values };
 
-      if (editItem?.id) {
-        updateDoctor({ id: editItem?.id, data: currentValues });
+      if (editItem?._id) {
+        console.log({ _id: editItem?._id, data: currentValues });
+        updateDoctor({ _id: editItem?._id, data: currentValues });
       } else {
         addDoctor(currentValues);
       }
     },
   });
 
+  console.log(editItem);
+
   useEffect(() => {
-    if (editItem?.id) {
+    if (editItem?._id) {
       formik.setValues({ ...editItem });
       setAutCompleteName({
         collegeHospital: editItem?.collegeHospital ?? "",
-        district: editItem?.district ?? "",
+        district_name: editItem?.district_name ?? "",
         district_id: editItem?.district_id ?? "",
-        upozila: editItem?.upozila ?? "",
+        upozila_name: editItem?.upozila_name ?? "",
         upozila_id: editItem?.upozila_id ?? "",
-        location: editItem?.location ?? "",
+        location_name: editItem?.location_name ?? "",
       });
       if (editItem?.upozila_id) {
         setLocationSearchUrl({
@@ -198,7 +201,7 @@ export default function DoctorsModal({
   }, [editItem]);
 
   const handleSearchChange = (e, type) => {
-    if (e && type === "district") {
+    if (e && type === "district_name") {
       setAutCompleteName({
         ...autoCompleteName,
         [type]: e.value,
@@ -210,7 +213,7 @@ export default function DoctorsModal({
         district_id: e.id,
       });
       setUpozilaSearchUrl({ url: `?district_id=${e.id}`, skip: false });
-    } else if (e && type === "upozila") {
+    } else if (e && type === "upozila_name") {
       setAutCompleteName({
         ...autoCompleteName,
         [type]: e.value,
@@ -218,18 +221,18 @@ export default function DoctorsModal({
       });
       formik.setValues({ ...formik.values, [type]: e.value, upozila_id: e.id });
       setLocationSearchUrl({ url: `?upozila_id=${e.id}`, skip: false });
-    } else if (e && (type === "location" || type === "collegeHospital")) {
+    } else if (e && (type === "locationv" || type === "collegeHospital")) {
       setAutCompleteName({
         ...autoCompleteName,
         [type]: e.value,
       });
       formik.setValues({ ...formik.values, [type]: e.value });
-    } else if (e === null && type === "district") {
+    } else if (e === null && type === "district_name") {
       setAutCompleteName({
         ...autoCompleteName,
         [type]: "",
         upozila: "",
-        location: "",
+        location_name: "",
       });
       formik.setValues({
         ...formik.values,
@@ -237,21 +240,21 @@ export default function DoctorsModal({
         district_id: "",
         upozila_id: "",
         upozila: "",
-        location: "",
+        location_name: "",
       });
       setUpozilaSearchUrl({ url: ``, skip: true });
       setLocationSearchUrl({ url: ``, skip: true });
-    } else if (e === null && type === "upozila") {
+    } else if (e === null && type === "upozila_name") {
       setAutCompleteName({
         ...autoCompleteName,
         [type]: "",
-        location: "",
+        location_name: "",
         upozila_id: "",
       });
       formik.setValues({
         ...formik.values,
         [type]: "",
-        location: "",
+        location_name: "",
       });
       setLocationSearchUrl({ url: ``, skip: true });
     } else {
@@ -290,38 +293,30 @@ export default function DoctorsModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isUpdateSuccess]);
 
+  console.log(formik.values);
 
   return (
     <form>
       <Modal isOpen={isOpen} size="xl" toggle={toggle}>
         <ModalHeader toggle={toggle}>
-          {editItem?.id ? "Update" : "Add"} Doctor
+          {editItem?._id ? "Update" : "Add"} Doctor
         </ModalHeader>
         <ModalBody>
           <div className="row">
             <div className="col-md-6">
               <FromInput
-                name="first_name"
-                id="first_name"
-                label="First Name"
-                placeholder="First Name"
-                isTouched={formik.touched.first_name}
-                invalidFeedback={formik.errors.first_name}
+                name="doctor_name"
+                id="doctor_name"
+                label="Doctor Name"
+                placeholder="Doctor Name"
+                isTouched={formik.touched.doctor_name}
+                invalidFeedback={formik.errors.doctor_name}
                 isValid={formik.isValid}
-                value={formik.values?.first_name ?? ""}
+                value={formik.values?.doctor_name ?? ""}
                 onChange={formik.handleChange}
               />
             </div>
-            <div className="col-md-6">
-              <FromInput
-                name="last_name"
-                id="last_name"
-                label="Last Name"
-                placeholder="Last Name"
-                value={formik.values?.last_name ?? ""}
-                onChange={formik.handleChange}
-              />
-            </div>
+
             <div className="col-md-6">
               <FromInput
                 name="phone"
@@ -405,12 +400,12 @@ export default function DoctorsModal({
                 invalidFeedback={formik.errors.district}
                 isValid={formik.isValid}
                 value={formatValue(
-                  autoCompleteName?.district,
+                  autoCompleteName?.district_name,
                   "Select District"
                 )}
                 label="District"
                 name="district"
-                onChange={(e) => handleSearchChange(e, "district")}
+                onChange={(e) => handleSearchChange(e, "district_name")}
               >
                 <Button color="primary" onClick={() => setIsOpenDistrict(true)}>
                   <i className="bi bi-plus-circle"></i>
@@ -424,10 +419,13 @@ export default function DoctorsModal({
                   upozilas?.data,
                   "upozila_name"
                 )}
-                value={formatValue(autoCompleteName?.upozila, "Select Upozila")}
+                value={formatValue(
+                  autoCompleteName?.upozila_name,
+                  "Select Upozila"
+                )}
                 label="Upozila"
-                name="upozila"
-                onChange={(e) => handleSearchChange(e, "upozila")}
+                name="upozila_name"
+                onChange={(e) => handleSearchChange(e, "upozila_name")}
               >
                 <Button
                   color="primary"
@@ -435,7 +433,7 @@ export default function DoctorsModal({
                     setIsOpenUpozila(true);
                     setEditUpozila({
                       district_id: autoCompleteName?.district_id,
-                      district_name: autoCompleteName?.district,
+                      district_name: autoCompleteName?.district_name,
                       status: true,
                     });
                   }}
@@ -452,12 +450,12 @@ export default function DoctorsModal({
                   "location_name"
                 )}
                 value={formatValue(
-                  autoCompleteName?.location,
+                  autoCompleteName?.location_name,
                   "Select Location"
                 )}
                 label="Location"
-                name="location"
-                onChange={(e) => handleSearchChange(e, "location")}
+                name="location_name"
+                onChange={(e) => handleSearchChange(e, "location_name")}
               >
                 <Button
                   color="primary"
@@ -465,7 +463,7 @@ export default function DoctorsModal({
                     setIsOpenLocation(true);
                     setEditLocation({
                       upozila_id: autoCompleteName?.upozila_id,
-                      upozila_name: autoCompleteName?.upozila,
+                      upozila_name: autoCompleteName?.upozila_name,
                       status: true,
                     });
                   }}
@@ -526,10 +524,10 @@ export default function DoctorsModal({
             <span className="d-flex gap-2">
               <i
                 className={`${
-                  editItem?.id ? "bi bi-pencil" : "bi bi-plus-circle"
+                  editItem?._id ? "bi bi-pencil" : "bi bi-plus-circle"
                 }`}
               ></i>
-              {editItem?.id ? "Update" : "Add"}
+              {editItem?._id ? "Update" : "Add"}
             </span>{" "}
           </Button>
         </ModalFooter>
@@ -540,7 +538,7 @@ export default function DoctorsModal({
           isOpen={isOpenDistrict}
           setToast={setToast}
         />
-        <UpozilaModal
+        <SubDistrictModal
           editItem={editUpozila}
           setEditItem={setEditUpozila}
           setIsOpen={setIsOpenUpozila}

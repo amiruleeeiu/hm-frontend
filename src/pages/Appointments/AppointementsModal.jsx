@@ -11,10 +11,10 @@ import {
   ModalHeader,
   Spinner,
 } from "reactstrap";
-import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
 import FromSelect from "../../components/FromSelect";
 import SearchSelect from "../../components/SearchSelect";
+import formatValue from "../../components/formatValue";
 import { selectDataFormate } from "../../components/selectDataFormate";
 import { tConvert } from "../../components/tConvert";
 import {
@@ -26,9 +26,6 @@ import { useGetDoctorsQuery } from "../../features/doctorApi";
 import { useGetLocationssQuery } from "../../features/locationApi";
 import { useGetShedulesQuery } from "../../features/sheduleApi";
 import { useGetUpozilasQuery } from "../../features/upozilaApi";
-import DistrictModal from "../Districts/DistrictModal";
-import LocationModal from "../Location/LocationModal";
-import UpozilaModal from "../Upozilas/UpozilaModal";
 
 export default function AppointementsModal({
   isOpen,
@@ -166,22 +163,7 @@ export default function AppointementsModal({
     },
   });
 
-  console.log(formik.values);
-
-  useEffect(() => {
-    if (editItem?.id || editItem?.district_name) {
-      formik.setValues({ ...editItem });
-      setAutCompleteName({
-        district_name: editItem?.district_name ?? "",
-        district_id: editItem?.district_id ?? "",
-        upozila_name: editItem?.upozila_name ?? "",
-        upozila_id: editItem?.upozila_id ?? "",
-        location_name: editItem?.location_name ?? "",
-        location_id: editItem?.location_id ?? "",
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editItem]);
+  console.log(editItem);
 
   const toggle = () => {
     setIsOpen(false);
@@ -350,6 +332,7 @@ export default function AppointementsModal({
 
   const handleDate = (date) => {
     setSelectedDate(date);
+    console.log(date);
 
     const currentTimeObj = shedules?.data.filter(
       (i) =>
@@ -390,6 +373,51 @@ export default function AppointementsModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values?.start_time]);
+
+  useEffect(() => {
+    if (editItem?.id || editItem?.district_name) {
+      formik.setValues({ ...editItem });
+      setAutCompleteName({
+        doctor_name: editItem?.doctor_name ?? "",
+        doctor_id: editItem?.doctor_id ?? "",
+        district_name: editItem?.district_name ?? "",
+        district_id: editItem?.district_id ?? "",
+        upozila_name: editItem?.upozila_name ?? "",
+        upozila_id: editItem?.upozila_id ?? "",
+        location_name: editItem?.location_name ?? "",
+        location_id: editItem?.location_id ?? "",
+      });
+
+      if (editItem?.doctor_id && editItem?.date) {
+        setSelectedDate(new Date(editItem?.date));
+
+        const currentDoctorShedules = shedules?.data
+          .filter((item) => item?.doctor_id === editItem?.doctor_id)
+          .map((i) => new Date(i?.date));
+        // setSelectedDate(currentDoctorShedules[0]);
+        setTotalShedules(currentDoctorShedules);
+      }
+      if (editItem?.date) {
+        const currentTimeObj = shedules?.data.filter(
+          (i) =>
+            new Date(i?.date).toLocaleDateString() ===
+              new Date(editItem?.date).toLocaleDateString() &&
+            i?.doctor_id === editItem?.doctor_id
+        );
+        setAppointmentStartTime(
+          currentTimeObj.map((i) => {
+            return {
+              name: tConvert(i?.start_time),
+              end_time: tConvert(i?.end_time),
+              id: i?.id,
+            };
+          })
+        );
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editItem]);
 
   console.log(formik.values);
 
@@ -595,7 +623,7 @@ export default function AppointementsModal({
             </span>{" "}
           </Button>
         </ModalFooter>
-        <DistrictModal
+        {/* <DistrictModal
           editItem={editDistrict}
           setEditItem={setEditDistrict}
           setIsOpen={setIsOpenDistrict}
@@ -615,7 +643,7 @@ export default function AppointementsModal({
           setIsOpen={setIsOpenLocation}
           isOpen={isOpenLocation}
           setToast={setToast}
-        />
+        /> */}
       </Modal>
     </form>
   );

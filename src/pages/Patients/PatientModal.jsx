@@ -6,23 +6,20 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Spinner
+  Spinner,
 } from "reactstrap";
-import formatValue from "../../components/formatValue";
 import FromInput from "../../components/FromInput";
-import { onlyNumber } from "../../components/onlyNumber";
 import SearchSelect from "../../components/SearchSelect";
+import formatValue from "../../components/formatValue";
+import { onlyNumber } from "../../components/onlyNumber";
 import { selectDataFormate } from "../../components/selectDataFormate";
 import { useGetDistrictsQuery } from "../../features/districtApi";
 import { useGetLocationssQuery } from "../../features/locationApi";
 import {
   useAddPatientMutation,
-  useUpdatePatientMutation
+  useUpdatePatientMutation,
 } from "../../features/patientApi";
 import { useGetUpozilasQuery } from "../../features/upozilaApi";
-import DistrictModal from "../Districts/DistrictModal";
-import LocationModal from "../Location/LocationModal";
-import UpozilaModal from "../Upozilas/UpozilaModal";
 
 const autoCompleteFieldName = {
   location_id: "",
@@ -167,7 +164,7 @@ export default function PatientModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isUpdateSuccess]);
 
-const handleSearchChange = (e, type) => {
+  const handleSearchChange = (e, type) => {
     if (e && type === "district_id") {
       setAutCompleteName({
         ...autoCompleteName,
@@ -464,7 +461,7 @@ const handleSearchChange = (e, type) => {
             </span>{" "}
           </Button>
         </ModalFooter>
-        <DistrictModal
+        {/* <DistrictModal
           editItem={editDistrict}
           setEditItem={setEditDistrict}
           setIsOpen={setIsOpenDistrict}
@@ -484,7 +481,7 @@ const handleSearchChange = (e, type) => {
           setIsOpen={setIsOpenLocation}
           isOpen={isOpenLocation}
           setToast={setToast}
-        />
+        /> */}
       </Modal>
     </form>
   );

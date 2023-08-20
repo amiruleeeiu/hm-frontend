@@ -64,7 +64,6 @@ export default function ShowPatient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toastObj]);
 
-  console.log(showPatient);
   return (
     <Layout title="Doctor information">
       <div className="ms-3">

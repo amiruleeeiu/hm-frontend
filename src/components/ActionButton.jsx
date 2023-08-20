@@ -6,14 +6,18 @@ export default function ActionButton({
   handleUpdate,
   setDeleteItemId,
   setIsOpenAlert,
+  edit = true,
 }) {
+  console.log(id);
   return (
     <>
-      <Button color="success" onClick={() => handleUpdate(id)}>
-        <span className="d-flex gap-2">
-          <i className="bi bi-pencil"></i>Edit
-        </span>
-      </Button>
+      {edit && (
+        <Button color="success" onClick={() => handleUpdate(id)}>
+          <span className="d-flex gap-2">
+            <i className="bi bi-pencil"></i>Edit
+          </span>
+        </Button>
+      )}
       <Button
         color="danger"
         onClick={() => {

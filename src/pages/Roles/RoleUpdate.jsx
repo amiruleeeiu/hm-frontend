@@ -53,7 +53,6 @@ export default function RoleUpdate() {
 
     updateRole({ id, data: { ...role, permission: permissions } });
   };
-  console.log(permissions);
 
   return (
     <div>

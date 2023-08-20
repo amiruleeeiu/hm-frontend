@@ -18,11 +18,15 @@ export const doctorApi = apiSlice.injectEndpoints({
       invalidatesTags: ["doctors"],
     }),
     updateDoctor: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `/doctors/${id}`,
-        method: "PATCH",
-        body: data,
-      }),
+      query: ({ _id, data }) => {
+        console.log(_id);
+        console.log(data);
+        return ({
+          url: `/doctors/${_id}`,
+          method: "PUT",
+          body: data,
+        })
+      },
       invalidatesTags: ["doctors"],
     }),
     deleteDoctor: builder.mutation({

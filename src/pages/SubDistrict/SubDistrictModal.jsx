@@ -1,5 +1,6 @@
 import { useFormik } from "formik";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import {
   Button,
   Col,
@@ -13,42 +14,60 @@ import {
   Spinner,
 } from "reactstrap";
 import FromInput from "../../components/FromInput";
+import { debounce } from "../../components/common/debounce";
+import { useGetDistrictsQuery } from "../../features/districtApi";
 import {
-  useAddDistrictMutation,
-  useUpdateDistrictMutation,
-} from "../../features/districtApi";
+  useAddSubDistrictMutation,
+  useUpdateSubDistrictMutation,
+} from "../../features/subDistrictApi";
 
-export default function DistrictModal({
+export default function SubDistrictModal({
   isOpen,
   title,
-  setIsOpen,
   setTitle,
+  setIsOpen,
   editItem,
   isFetching,
   setEditItem,
   setToast,
 }) {
-  const [addDistrict, { districtData, isSuccess, isLoading, isError, error }] =
-    useAddDistrictMutation();
+  const [addSubDistrict, { isLoading, isSuccess, error, isError }] =
+    useAddSubDistrictMutation();
+
+  const [districtSearchUrl, setDistrictSearchUrl] = useState("");
+  const { data: districtData, isFetching: districtFetching } =
+    useGetDistrictsQuery(districtSearchUrl, {
+      refetchOnMountOrArgChange: true,
+    });
+
+  const [autoCompleteName, setAutCompleteName] = useState({
+    district_id: "",
+    district_name: "Select District",
+  });
 
   const [
-    updateDistrict,
+    updateSubDistrict,
     { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
-  ] = useUpdateDistrictMutation();
+  ] = useUpdateSubDistrictMutation();
 
   let initial = {
+    district_id: "",
+    subDistrict_id: "",
     name: "",
     status: "1",
   };
-  console.log(isFetching);
 
   const formik = useFormik({
     initialValues: initial,
     validate: (values) => {
       const errors = {};
 
+      if (!values.district_id) {
+        errors.district_id = "The district Name is Required";
+      }
+
       if (!values.name) {
-        errors.name = "The district Name is Required";
+        errors.name = "The sub-district Name is Required";
       }
 
       return errors;
@@ -57,14 +76,12 @@ export default function DistrictModal({
       const currentValues = { ...values, status: values?.status ? "1" : "2" };
 
       if (editItem?.id) {
-        updateDistrict({ id: editItem?.id, data: currentValues });
+        updateSubDistrict({ id: editItem?.id, data: currentValues });
       } else {
-        addDistrict(currentValues);
+        addSubDistrict(currentValues);
       }
     },
   });
-
-  console.log(editItem);
 
   useEffect(() => {
     if (editItem?.id || editItem?.upozila_id) {
@@ -72,6 +89,11 @@ export default function DistrictModal({
         id: editItem?.id,
         status: editItem?.status == 1 ? true : false,
         name: editItem?.name,
+        district_id: editItem?.district_id?._id,
+      });
+      setAutCompleteName({
+        district_id: editItem?.district_id?._id,
+        district_name: editItem?.district_id?.name,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,12 +103,9 @@ export default function DistrictModal({
     setIsOpen(false);
     formik.resetForm();
     setEditItem({});
+    setAutCompleteName({ upozila_id: "", upozila_name: "" });
   };
-
-  console.log(isError);
-
-  console.log(error?.data?.message);
-
+  console.log(error);
   useEffect(() => {
     if (isSuccess) {
       setToast({ message: "Successfully Added" });
@@ -94,11 +113,12 @@ export default function DistrictModal({
     }
 
     if (isError) {
-      setToast({ message: error?.data?.message, type: 'error' });
+      setToast({ message: error?.data?.message, type: "error" });
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSuccess, isError, districtData]);
+  }, [isSuccess,error,isError]);
+
+  console.log(formik);
 
   useEffect(() => {
     if (isUpdateSuccess) {
@@ -108,11 +128,52 @@ export default function DistrictModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isUpdateSuccess]);
 
+  const handleSelectChange = (e) => {
+    if (e) {
+      formik.setValues({
+        ...formik.values,
+        district_id: e?.value,
+      });
+      setAutCompleteName({
+        ...autoCompleteName,
+        district_id: e?.value,
+        district_name: e?.label,
+      });
+    } else {
+      formik.setValues({
+        ...formik.values,
+        district_id: "",
+      });
+      setAutCompleteName({
+        ...autoCompleteName,
+        district_id: "",
+        district_name: "",
+      });
+    }
+  };
+
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
+    const { country_id } = formik.values;
+    if (action === "input-change") {
+      if (fieldName === "state_id" && country_id) {
+        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
+      } else {
+        debounce(`?name=${value}`, setUrlStr);
+      }
+    } else if (action === "input-blur") {
+      if (fieldName === "state_id" && country_id) {
+        debounce(`?country_id=${country_id}`, setUrlStr);
+      } else {
+        debounce(``, setUrlStr);
+      }
+    }
+  };
+  console.log(editItem);
   return (
     <form>
       <Modal isOpen={isOpen} size="lg" toggle={toggle}>
         <ModalHeader toggle={toggle}>
-          {title === "View" ? "" : title} District
+          {title === "View" ? "" : title} Sub-District
           {!isFetching && title === "View" && (
             <Button
               size="sm"
@@ -131,11 +192,16 @@ export default function DistrictModal({
                 <table className="table table-striped">
                   <tbody>
                     <tr>
-                      <td style={{ minWidth: "40%" }}>District</td>
+                      <td style={{ minWidth: "40%" }}>Sub-district</td>
                       <td style={{ minWidth: "10%" }}>:</td>
                       <td>{editItem?.name}</td>
                     </tr>
 
+                    <tr>
+                      <td style={{ minWidth: "40%" }}>District Name</td>
+                      <td style={{ minWidth: "10%" }}>:</td>
+                      <td>{editItem?.district_id?.name}</td>
+                    </tr>
                     <tr>
                       <td>Status</td>
                       <td>:</td>
@@ -160,13 +226,53 @@ export default function DistrictModal({
           )}
           {title !== "View" && !isFetching && (
             <div className="row">
+              <FormGroup row className="mt-3">
+                <Label for="subDistrict_id" sm="2">
+                  District
+                </Label>
+                <Col lm="10">
+                  <Select
+                    value={{
+                      value: autoCompleteName?.district_id,
+                      label: autoCompleteName?.district_name
+                        ? autoCompleteName?.district_name
+                        : "Search District",
+                    }}
+                    onChange={(e) => handleSelectChange(e)}
+                    onInputChange={(e, action) =>
+                      handleInputChange(
+                        e,
+                        action,
+                        setDistrictSearchUrl,
+                        "district_id"
+                      )
+                    }
+                    isClearable={autoCompleteName?.district_id ? true : false}
+                    options={
+                      districtData?.data?.data?.map((i) => ({
+                        label: i?.name,
+                        value: i?._id,
+                      })) ?? []
+                    }
+                    className="select2-selection"
+                    isLoading={districtFetching}
+                    // isDisabled={districtFetching}
+                  />
+                  {formik.touched.district_id && formik.errors.district_id && (
+                    <span className="text-danger">
+                      {formik.errors.district_id}
+                    </span>
+                  )}
+                </Col>
+              </FormGroup>
+
               <FormGroup row>
-                <Label sm="2">District Name</Label>
+                <Label sm="2">Sub-district Name</Label>
                 <Col sm="10">
                   <FromInput
                     name="name"
                     id="name"
-                    placeholder="District Name"
+                    placeholder="Sub-district Name"
                     isTouched={formik.touched.name}
                     invalidFeedback={formik.errors.name}
                     isValid={formik.isValid}
@@ -182,7 +288,7 @@ export default function DistrictModal({
                     <div>
                       <input
                         type="radio"
-                        id="district_active"
+                        id="location_active"
                         className="me-1"
                         value={true}
                         onChange={() =>
@@ -193,13 +299,13 @@ export default function DistrictModal({
                         }
                         checked={formik?.values?.status}
                       />
-                      <label for="district_active">Active</label>
+                      <label for="location_active">Active</label>
                     </div>
 
                     <div>
                       <input
                         type="radio"
-                        id="district_inactive"
+                        id="location_inactive"
                         value={false}
                         onChange={() =>
                           formik.setValues({
@@ -210,7 +316,7 @@ export default function DistrictModal({
                         checked={!formik?.values?.status}
                         className="ms-3 me-1"
                       />
-                      <label for="district_inactive">Inactive</label>
+                      <label for="location_inactive">Inactive</label>
                     </div>
                   </div>
                 </Col>
@@ -222,8 +328,8 @@ export default function DistrictModal({
           <ModalFooter>
             <Button
               color="primary"
-              size="sm"
               onClick={formik.handleSubmit}
+              size="sm"
               disabled={isLoading || isUpdateLoading}
             >
               <span className="d-flex gap-2">

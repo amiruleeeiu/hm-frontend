@@ -3,7 +3,7 @@ import { apiSlice } from "./app/appSlice";
 export const upozilaApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getUpozilas: builder.query({
-      query: (url) => `/upozilas${url}`,
+      query: (url) => `/sub-districts${url}`,
       providesTags: ["upozilas"],
     }),
     getUpozila: builder.query({

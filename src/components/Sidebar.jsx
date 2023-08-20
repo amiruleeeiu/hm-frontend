@@ -52,8 +52,8 @@ export default function Sidebar() {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/upozilas" className="text-decoration-none text-white">
-            Upozila
+          <NavLink to="/sub-districts" className="text-decoration-none text-white">
+            Sub-District
           </NavLink>
         </li>
         <li>

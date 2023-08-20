@@ -13,8 +13,6 @@ export default function ShowAppointment({
     setEditItem({});
   };
 
-  console.log(editItem);
-
   const { doctor_name, date, start_time, end_time, status } = editItem || {};
   return (
     <Modal isOpen={isOpen} size="lg" toggle={toggle}>

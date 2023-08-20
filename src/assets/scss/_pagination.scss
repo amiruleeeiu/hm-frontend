@@ -1,0 +1,65 @@
+.pagination-btn {
+  border: none;
+  padding: 5px 12px;
+  transition: 0.2s;
+}
+.pagination-btn-hover:hover {
+  background-color: #c7c6c680;
+}
+.card {
+  box-shadow: 0 1.6rem 3rem rgba(0, 0, 0, 0.1) !important;
+  border: none;
+}
+
+.page-content {
+  padding: 10px 30px;
+}
+
+.index-table {
+  height: 55vh;
+  // overflow-x: scroll;
+}
+
+.modal-title {
+  width: 96%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.active {
+  text-decoration: none;
+  color: gray;
+  &:hover {
+    color: gray;
+  }
+}
+
+tbody {
+  vertical-align: middle !important;
+}
+
+.form-control {
+  outline: none;
+  &:active {
+    outline: none;
+  }
+}
+
+td,th{
+  padding: 10px 15px !important;
+}
+
+.table{
+  padding: 20px 0px;
+  
+}
+
+.table-striped>tbody>tr:nth-of-type(even)>* {
+  --bs-table-accent-bg: var(--bs-table-striped-bg);
+  color: var(--bs-table-striped-color) !important;
+}
+
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+  --bs-table-accent-bg: white;
+  color: var(--bs-table-striped-color) !important;
+}

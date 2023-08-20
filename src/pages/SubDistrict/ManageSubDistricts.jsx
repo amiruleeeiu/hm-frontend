@@ -15,12 +15,11 @@ import {
 import { statusList } from "../../components/common/statusList";
 import { useGetDistrictsQuery } from "../../features/districtApi";
 import {
-  useDeleteLocationMutation,
-  useGetLocationQuery,
-  useGetLocationssQuery,
-} from "../../features/locationApi";
-import { useGetSubDistrictsQuery } from "../../features/subDistrictApi";
-import LocationModal from "./LocationModal";
+  useDeleteSubDistrictMutation,
+  useGetSubDistrictsQuery,
+  useShowSubDistrictQuery,
+} from "../../features/subDistrictApi";
+import SubDistrictModal from "./SubDistrictModal";
 
 const searchFieldsData = {
   name: "",
@@ -39,8 +38,8 @@ const searchTextFieldsData = {
   name: "",
 };
 
-function Location() {
-  document.title = `Location `;
+function ManageSubDistricts() {
+  document.title = `Sub-district `;
 
   const { addToast } = useToasts();
 
@@ -58,24 +57,18 @@ function Location() {
   const [title, setTitle] = useState("Add");
 
   const [countrySearchUrl, setCountrySearchUrl] = useState("");
-  const { data: countriesData, isFetching: countryfetching } =
+  const { data: districtsData, isFetching: districtFetching } =
     useGetDistrictsQuery(countrySearchUrl, {
-      refetchOnMountOrArgChange: true,
-    });
-
-  const [subDistrictSearchUrl, setSubDistrictSearchUrl] = useState("");
-  const { data: subDistrict, isFetching: statefetching } =
-    useGetSubDistrictsQuery(subDistrictSearchUrl, {
       refetchOnMountOrArgChange: true,
     });
 
   const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
   const [editItem, setEditItem] = useState({});
   const {
-    data: country,
+    data: subDistricts,
     isSuccess,
     isFetching: isFetchingGetAll,
-  } = useGetLocationssQuery(urlString, {
+  } = useGetSubDistrictsQuery(urlString, {
     refetchOnMountOrArgChange: true,
   });
 
@@ -86,7 +79,7 @@ function Location() {
       isLoading: deleteLoading,
       isSuccess: deleteSuccess,
     },
-  ] = useDeleteLocationMutation();
+  ] = useDeleteSubDistrictMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState({});
@@ -107,7 +100,7 @@ function Location() {
     isSuccess: isShowSuccess,
     refetch,
     isFetching,
-  } = useGetLocationQuery(fetchCondition.id, {
+  } = useShowSubDistrictQuery(fetchCondition.id, {
     skip: fetchCondition.skip,
     refetchOnMountOrArgChange: true,
   });
@@ -177,7 +170,7 @@ function Location() {
   useEffect(() => {
     const content = (
       <div>
-        <strong>Location Notification</strong>
+        <strong>Sub-district Notification</strong>
         <p>{toast?.message}</p>
       </div>
     );
@@ -265,7 +258,7 @@ function Location() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length === 0
+    subDistricts?.data?.data?.length === 0
   ) {
     content = (
       <tr>
@@ -275,9 +268,9 @@ function Location() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length > 0
+    subDistricts?.data?.data?.length > 0
   ) {
-    content = country?.data?.data.map((user, i) => {
+    content = subDistricts?.data?.data.map((user, i) => {
       return (
         <tr key={user.id}>
           <td>{i + 1}</td>
@@ -289,7 +282,6 @@ function Location() {
           </td>
 
           <td>{user?.district_id?.name}</td>
-          <td>{user?.subDistrict_id?.name}</td>
           <td>
             <Badge color={user.status == 1 ? "success" : "danger"}>
               {user?.status == 1 ? "Active" : "Inactive"}
@@ -331,7 +323,7 @@ function Location() {
     });
   }
 
-  let meta = country?.data?.meta;
+  let meta = subDistricts?.data?.meta;
 
   /** Handle Search */
   const handleOnChangeSearch = (e) => {
@@ -355,32 +347,12 @@ function Location() {
           ...searchFields,
           district_id: e?.value,
           district_name: e?.label,
-          subDistrict_id: "",
-          subDistrict_name: "",
         });
-        setSubDistrictSearchUrl(`?district_id=${e?.value}`);
       } else {
         setPageAndSearchFields(1, {
           ...searchFields,
           district_id: "",
           district_name: "",
-          subDistrict_id: "",
-          subDistrict_name: "",
-        });
-        setSubDistrictSearchUrl("");
-      }
-    } else {
-      if (e) {
-        setPageAndSearchFields(1, {
-          ...searchFields,
-          subDistrict_id: e?.value,
-          subDistrict_name: e?.label,
-        });
-      } else {
-        setPageAndSearchFields(1, {
-          ...searchFields,
-          subDistrict_id: "",
-          subDistrict_name: "",
         });
       }
     }
@@ -411,13 +383,14 @@ function Location() {
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div>
           <h5 className="mb-3">
-            <i className="mdi mdi-city-variant text-primary me-1"></i>Location
+            <i className="mdi mdi-city-variant text-primary me-1"></i>
+            Sub-district
           </h5>
           <Breadcrumb
             title={"Dashboard"}
             list={[
               { title: "Dashboard", to: "/dashboard" },
-              { title: "Locations", to: "/locations?page=1&limit=20" },
+              { title: "Sub-districts", to: "/sub-districts?page=1&limit=20" },
             ]}
           />
         </div>
@@ -431,7 +404,7 @@ function Location() {
               setEditItem({});
             }}
           >
-            <i class="ri-add-circle-line"></i>&nbsp;Add Location
+            <i class="ri-add-circle-line"></i>&nbsp;Add Sub-district
           </Button>
         </div>
       </div>
@@ -461,7 +434,6 @@ function Location() {
                     </div>
                   </th>
                   <th style={{ minWidth: "200px" }}>District</th>
-                  <th style={{ minWidth: "200px" }}>SubDistrict</th>
                   <th style={{ minWidth: "150px" }}>Status</th>
                   <th style={{ minWidth: "290px" }}>Action</th>
                 </tr>
@@ -499,41 +471,13 @@ function Location() {
                       }
                       isClearable={searchFields?.district_id ? true : false}
                       options={
-                        countriesData?.data?.data?.map((i) => ({
+                        districtsData?.data?.data?.map((i) => ({
                           label: i?.name,
                           value: i?._id,
                         })) ?? []
                       }
                       className="select2-selection"
-                      isLoading={countryfetching}
-                    />
-                  </td>
-                  <td>
-                    <Select
-                      value={{
-                        value: searchFields?.subDistrict_id,
-                        label: searchFields?.subDistrict_name
-                          ? searchFields?.subDistrict_name
-                          : "Search Sub-district",
-                      }}
-                      onChange={(e) => handleSelectChange(e, "state_id")}
-                      onInputChange={(e, action) =>
-                        handleInputChange(
-                          e,
-                          action,
-                          setSubDistrictSearchUrl,
-                          "state_id"
-                        )
-                      }
-                      isClearable={searchFields?.subDistrict_id ? true : false}
-                      options={
-                        subDistrict?.data?.data?.map((i) => ({
-                          label: i?.name,
-                          value: i?._id,
-                        })) ?? []
-                      }
-                      className="select2-selection"
-                      isLoading={statefetching}
+                      isLoading={districtFetching}
                     />
                   </td>
 
@@ -604,12 +548,12 @@ function Location() {
           <p className="text-dark">
             You want to delete{" "}
             <strong className="text-dark fs-5">{deleteItem?.name}</strong>{" "}
-            location.
+            sub-district.
           </p>
         </SweetAlert>
       )}
       {isOpen && (
-        <LocationModal
+        <SubDistrictModal
           isOpen={isOpen}
           editItem={editItem}
           setEditItem={setEditItem}
@@ -624,4 +568,4 @@ function Location() {
   );
 }
 
-export default Location;
+export default ManageSubDistricts;

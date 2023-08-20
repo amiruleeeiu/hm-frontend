@@ -207,6 +207,8 @@ export default function ManageDoctors() {
     }
   };
 
+  
+
   const handleOnChangeSelect = (e) => {
     setSearchFields({
       ...searchFields,
@@ -236,7 +238,7 @@ export default function ManageDoctors() {
     setSearchFields({ ...searchFields, ...searchTextFields });
   };
 
-  console.log(limit);
+  console.log(doctors);
 
   const cancelSearch = () => {
     setSearchFields(searchFieldsName);
@@ -257,7 +259,7 @@ export default function ManageDoctors() {
       </tbody>
     );
   }
-  if (!isLoading && isSuccess && doctors.data?.length === 0) {
+  if (!isLoading && isSuccess && doctors?.length === 0) {
     content = (
       <tbody>
         <tr>
@@ -266,14 +268,14 @@ export default function ManageDoctors() {
       </tbody>
     );
   }
-  if (!isLoading && isSuccess && doctors.data?.length > 0) {
+  if (!isLoading && isSuccess && doctors?.length > 0) {
     content = (
       <tbody>
-        {doctors.data.map((item, index) => (
+        {doctors.map((item, index) => (
           <tr key={index} className="align-middle">
             <td>{index + 1}</td>
             <td>
-              <Link to={`/doctors/${item?.id}`}>
+              <Link to={`/doctors/${item?._id}`}>
                 <Button className="me-2" color="primary" outline>
                   <span className="d-flex gap-2">
                     <i className="bi bi-info-circle"></i>
@@ -288,13 +290,13 @@ export default function ManageDoctors() {
             <td>{item?.specialest}</td>
             <td>{item?.title}</td>
             <td>{item?.collegeHospital}</td>
-            <td>{item?.location}</td>
+            <td>{item?.location?.location_name}</td>
             <td>
               <Status item={item} statusUpdate={statusUpdate} />
             </td>
             <td className="d-flex gap-2">
               <ActionButton
-                id={item?.id}
+                id={item?._id}
                 handleUpdate={handleUpdate}
                 setDeleteItemId={setDeleteItemId}
                 setIsOpenAlert={setIsOpenAlert}

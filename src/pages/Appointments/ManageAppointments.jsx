@@ -133,7 +133,6 @@ export default function ManageAppointments() {
   }, [searchFields]);
 
   const handleUpdate = (id) => {
-    console.log(id);
     setIsOpen(true);
     if (doctorId === id) {
       refetch();
@@ -215,8 +214,6 @@ export default function ManageAppointments() {
   };
 
   const handleSearchChange = (e, fieldName) => {
-    console.log(e);
-    console.log(fieldName);
     if (fieldName === "doctor_id") {
       if (e) {
         setAutCompleteName({ doctor_id: e.id, doctor_name: e.doctor_name });
@@ -368,6 +365,7 @@ export default function ManageAppointments() {
             <td className="d-flex gap-2">
               <ActionButton
                 id={item?.id}
+                edit={item?.status === "Done" ? false : true}
                 handleUpdate={handleUpdate}
                 setDeleteItemId={setDeleteItemId}
                 setIsOpenAlert={setIsOpenAlert}

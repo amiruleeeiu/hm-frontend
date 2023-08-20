@@ -6,6 +6,9 @@ export const districtApi = apiSlice.injectEndpoints({
       query: (url) => `/districts${url}`,
       providesTags: ["districts"],
     }),
+    showDistrict: builder.query({
+      query: (id) => `/districts${id}`,
+    }),
     getDistrict: builder.query({
       query: (id) => `/districts/${id}`,
     }),
@@ -20,7 +23,7 @@ export const districtApi = apiSlice.injectEndpoints({
     updateDistrict: builder.mutation({
       query: ({ id, data }) => ({
         url: `/districts/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: ["districts"],
@@ -36,6 +39,7 @@ export const districtApi = apiSlice.injectEndpoints({
 });
 
 export const {
+  useShowDistrictQuery,
   useGetDistrictsQuery,
   useGetDistrictQuery,
   useAddDistrictMutation,

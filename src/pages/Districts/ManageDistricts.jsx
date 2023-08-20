@@ -1,356 +1,497 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import { Button } from "reactstrap";
-import ActionButton from "../../components/ActionButton";
-import DeleteAlert from "../../components/DeleteAlert";
-import FromInput from "../../components/FromInput";
-import FromSelect from "../../components/FromSelect";
-import { statusList } from "../../components/list";
-import ReactPagination from "../../components/ReactPagination";
-import { searchUrl } from "../../components/searchFields";
-import SearchHandler from "../../components/SearchHandler";
-import Status from "../../components/Status";
+// import { useToasts } from "react-toast-notifications";
+import { useToasts } from "react-toast-notifications";
+import { Badge, Button, Card, CardBody, Input, Spinner } from "reactstrap";
+import Breadcrumb from "../../components/common/Breadcrumb";
+import Pagination from "../../components/common/Pagination";
+import SweetAlert from "../../components/common/SweetAlert";
 import {
-  useDeleteDistrictMutation,
+  getUrlStrByObj,
+  isObjectValueExits,
+} from "../../components/common/listDataHelper";
+import { statusList } from "../../components/common/statusList";
+import {
   useGetDistrictQuery,
   useGetDistrictsQuery,
-  useUpdateDistrictMutation,
 } from "../../features/districtApi";
+import { useDeleteLocationMutation } from "../../features/locationApi";
 import DistrictModal from "./DistrictModal";
-import ShowDistrict from "./ShowDistrict";
 
-const searchTextFieldsName = {
-  district_name: "",
-};
-
-const searchFieldsName = {
-  district_name: "",
+const searchFieldsData = {
+  name: "",
+  status: "",
+  sortOrder: "",
+  sortBy: "",
+  country_id: "",
+  country_name: "",
+  state_id: "",
+  state_name: "",
   page: 1,
-  limit: 10,
+  limit: 20,
 };
 
-export default function ManageDistricts() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isOpenAlert, setIsOpenAlert] = useState(false);
-  const [editItem, setEditItem] = useState({});
-  const [deleteItemId, setDeleteItemId] = useState(null);
+const searchTextFieldsData = {
+  name: "",
+};
+
+function ManageDistricts() {
+  document.title = `District `;
+
+  const { addToast } = useToasts();
 
   const { search } = useLocation();
-
+  const firstRender = useRef(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentParams = Object.fromEntries([...searchParams]);
+  let initialSearchFieldsData = { ...searchFieldsData, ...currentParams };
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [searchFields, setSearchFields] = useState(searchFieldsName);
-
+  const [searchFields, setSearchFields] = useState(initialSearchFieldsData);
   const [searchTextFields, setSearchTextFields] =
-    useState(searchTextFieldsName);
+    useState(searchTextFieldsData);
 
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
-  const [toastObj, setToast] = useState({});
-  const [isOpenShow, setIsOpenShow] = useState(false);
+  const [title, setTitle] = useState("Add");
 
-  const [urlString, setUrlString] = useState(``);
+  const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
+  const [editItem, setEditItem] = useState({});
   const {
-    data: districts,
-    isLoading,
+    data: country,
     isSuccess,
-  } = useGetDistrictsQuery(urlString, { refetchOnMountorArgChange: true });
-
-  const [doctorId, setDoctorId] = useState("");
-  const {
-    data: showDoctor,
-    isSuccess: isShowDoctorSuccess,
-    isFetching,
-    refetch,
-  } = useGetDistrictQuery(doctorId, {
-    refetchOnMountorArgChange: true,
+    isFetching: isFetchingGetAll,
+  } = useGetDistrictsQuery(urlString, {
+    refetchOnMountOrArgChange: true,
   });
 
-  const [deleteDoctor, { isSuccess: isDeleteSuccess }] =
-    useDeleteDistrictMutation();
-
   const [
-    updateDoctor,
-    { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
-  ] = useUpdateDistrictMutation();
+    deleteCity,
+    {
+      data: deleteResponse,
+      isLoading: deleteLoading,
+      isSuccess: deleteSuccess,
+    },
+  ] = useDeleteLocationMutation();
 
-  const statusUpdate = (data, e) => {
-    console.log(e);
-    console.log(data);
-    updateDoctor({ id: data?.id, data: { ...data, status: e } });
+  const [isOpen, setIsOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState({});
+  const [toast, setToast] = useState({});
+
+  // // BEGIN :: Upcoming Events
+  // const [upcomingEventsInfoOffcanvas, setUpcomingEventsInfoOffcanvas] = useState(false);
+
+  const [limit, setLimit] = useState(10);
+
+  const [fetchCondition, setFetchCondition] = useState({
+    id: null,
+    skip: true,
+  });
+
+  const {
+    data: showItem,
+    isSuccess: isShowSuccess,
+    refetch,
+    isFetching,
+  } = useGetDistrictQuery(fetchCondition.id, {
+    skip: fetchCondition.skip,
+    refetchOnMountOrArgChange: true,
+  });
+  console.log(isFetching);
+  useEffect(() => {
+    if (!isFetching && isShowSuccess) {
+      console.log(showItem);
+      setEditItem(showItem?.data);
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isShowSuccess, showItem, isFetching, isSuccess]);
+
+  const handleUpcomingDetails = (user, type) => {
+    if (fetchCondition?.id === user.id) {
+      refetch();
+    } else {
+      setFetchCondition({ id: user.id, skip: false });
+    }
+    setTitle(type);
+    setIsOpen(true);
   };
 
-  useEffect(() => {
-    if (toastObj?.message) {
-      toast.success(toastObj?.message, { autoClose: 1000 });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toastObj]);
+  /** Set Page and search field */
+  const setPageAndSearchFields = (page, searchFieldObj) => {
+    setCurrentPage(page);
+    setSearchFields(searchFieldObj);
+  };
 
+  /** Use Effet for search filter and sort */
   useEffect(() => {
-    let url = searchUrl(searchFields);
-    if (url.length > 0) {
-      url = "?".concat(url);
+    if (firstRender.current) {
+      firstRender.current = false;
+
+      return;
     }
-    console.log("search");
-    console.log(url);
-    setUrlString(url);
-    setSearchParams(url);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const urlStr = getUrlStrByObj(searchFields);
+    setSearchParams(urlStr);
+    setUrlString(urlStr);
+
+    /* eslint-disable react-hooks/exhaustive-deps */
   }, [searchFields]);
 
-  const handleUpdate = (id) => {
-    setIsOpen(true);
-    if (doctorId === id) {
-      refetch();
-    } else {
-      setDoctorId(id);
-    }
-  };
-
-  const showDistrict = (id) => {
-    setIsOpenShow(true);
-    if (doctorId === id) {
-      refetch();
-    } else {
-      setDoctorId(id);
-    }
-  };
-
-  useEffect(() => {
-    setSearchFields({ ...searchFields, page: page, limit: limit });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
-
+  /** This is for set search filter and soting value after page refresh */
   useEffect(() => {
     if (search) {
-      const result = Object.fromEntries([...searchParams]);
-
-      const { district_name } = result;
-      setSearchFields({
-        ...searchFields,
-        district_name,
+      const params = Object.fromEntries([...searchParams]);
+      //setPageAndSearchFields(parseInt(params?.page), params);
+      setSearchTextFields({
+        ...searchTextFields,
+        ...params,
       });
-      setSearchTextFields({ ...searchTextFields, district_name });
     }
+    return () => {};
   }, []);
 
+  // /** Delete  response action */
   useEffect(() => {
-    if (!isFetching && isShowDoctorSuccess) {
-      setEditItem(showDoctor);
+    if (deleteSuccess) {
+      setToast({
+        title: "City notification",
+        message: deleteResponse?.message,
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFetching, isShowDoctorSuccess, showDoctor]);
+  }, [deleteResponse, deleteSuccess]);
 
-  const handleAddDoctor = () => {
-    setIsOpen(true);
-    setEditItem({});
-  };
+  /** Toast message trigger */
+  useEffect(() => {
+    const content = (
+      <div>
+        <strong>District Notification</strong>
+        <p>{toast?.message}</p>
+      </div>
+    );
+    if (toast?.message) {
+      addToast(content, {
+        appearance: toast?.type ? toast?.type : "success",
+        autoDismiss: true,
+        autoDismissTimeout: 2000,
+      });
+    }
+  }, [toast]);
 
-  console.log(editItem);
+  console.log(toast);
+  /** Per page limit*/
+  useEffect(() => {
+    if (limit) {
+      setPageAndSearchFields(1, { ...searchFields, limit });
+    }
+  }, [limit]);
 
-  const handleDelete = (id) => {
-    deleteDoctor(id);
-    setIsOpenAlert(false);
-  };
+  useEffect(() => {
+    if (currentPage) {
+      setPageAndSearchFields(currentPage, {
+        ...searchFields,
+        page: currentPage,
+        limit,
+      });
+    }
+  }, [currentPage]);
 
-  const handleChange = (e) => {
-    setSearchTextFields({
-      ...searchTextFields,
-      [e.target.name]: e.target.value,
+  /** Handle Pagination */
+
+  /** Handle Sorting */
+  const handleSort = (sortBy) => {
+    let page = 1;
+    let sortOrder = searchFields?.sortOrder === "ASC" ? "DESC" : "ASC";
+    setPageAndSearchFields(page, {
+      ...searchFields,
+      page,
+      sortOrder,
+      sortBy,
     });
   };
 
+  /** Submit by Enter */
   const handleKeyDown = (e) => {
-    if (e?.key === "Enter") {
-      setSearchFields({
-        ...searchFields,
+    if (e.key === "Enter") {
+      let margeObject = { ...searchFields, ...searchTextFields };
+      const { name, value } = e.target;
+      setPageAndSearchFields(1, { ...margeObject, [name]: value, page: 1 });
+    }
+  };
+
+  /** Search Submit */
+  const handleSearchSubmit = () => {
+    let margeObject = { ...searchFields, ...searchTextFields };
+    setPageAndSearchFields(1, { ...margeObject, page: 1 });
+  };
+
+  /** Clear Search */
+  const clearSearch = () => {
+    setSearchParams({});
+    setPageAndSearchFields(1, searchFieldsData);
+    setSearchTextFields(searchTextFieldsData);
+  };
+
+  /** Delete */
+  /** Content */
+  let content = null;
+  if (isFetchingGetAll || deleteLoading) {
+    content = (
+      <tr>
+        <td colSpan={9}>
+          <div className="text-center my-5 py-5">
+            <Spinner
+              style={{
+                height: "3rem",
+                width: "3rem",
+              }}
+              color="primary"
+              type="grow"
+            />
+          </div>
+        </td>
+      </tr>
+    );
+  } else if (
+    !isFetchingGetAll &&
+    isSuccess &&
+    country?.data?.data?.length === 0
+  ) {
+    content = (
+      <tr>
+        <td colSpan={9}>{"No Record Found"}</td>
+      </tr>
+    );
+  } else if (
+    !isFetchingGetAll &&
+    isSuccess &&
+    country?.data?.data?.length > 0
+  ) {
+    content = country?.data?.data?.map((user, i) => {
+      return (
+        <tr key={user.id}>
+          <td>{i + 1}</td>
+
+          <td>
+            <div>
+              <div>{user?.name}</div>
+            </div>
+          </td>
+
+          <td>
+            <Badge color={user.status == 1 ? "success" : "danger"}>
+              {user?.status == 1 ? "Active" : "Inactive"}
+            </Badge>
+          </td>
+
+          <td>
+            <Button
+              color="success"
+              size="sm"
+              onClick={() => {
+                handleUpcomingDetails(user, "View");
+              }}
+            >
+              <i class="ri-eye-line"></i>&nbsp; View
+            </Button>
+            &nbsp;
+            <Button
+              size="sm"
+              color="primary"
+              className="btn-light-primary"
+              onClick={() => {
+                handleUpcomingDetails(user, "Update");
+              }}
+            >
+              <i class="ri-pencil-fill">&nbsp;</i>Edit
+            </Button>
+            &nbsp;
+            <Button
+              size="sm"
+              color="danger"
+              onClick={() => setDeleteItem(user)}
+            >
+              <i class="ri-delete-bin-6-line"></i>&nbsp;Delete
+            </Button>
+          </td>
+        </tr>
+      );
+    });
+  }
+
+  let meta = country?.data?.meta;
+
+  /** Handle Search */
+  const handleOnChangeSearch = (e) => {
+    const { name, value, type } = e.target;
+
+    if (type === "select-one") {
+      let margeObject = { ...searchFields, ...searchTextFields };
+      setPageAndSearchFields(1, { ...margeObject, [name]: value, page: 1 });
+    } else {
+      setSearchTextFields({
         ...searchTextFields,
-        [e.target.name]: e.target.value,
+        [name]: value,
       });
     }
   };
 
-  const handleOnChangeSelect = (e) => {
-    setSearchFields({
-      ...searchFields,
-      ...searchTextFields,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleAllSearch = () => {
-    setSearchFields({ ...searchFields, ...searchTextFields });
-  };
-
-  console.log(limit);
-
-  const cancelSearch = () => {
-    setSearchFields(searchFieldsName);
-    setSearchTextFields(searchTextFieldsName);
-    setPage(1);
-    setLimit(10);
-  };
-
-  let content = null;
-
-  console.log(districts?.data);
-
-  if (isLoading && !isSuccess) {
-    content = (
-      <tbody>
-        <tr>
-          <td>Loading...</td>
-        </tr>
-      </tbody>
-    );
-  }
-  if (!isLoading && isSuccess && districts.data?.length === 0) {
-    content = (
-      <tbody>
-        <tr>
-          <td>There is no doctos.</td>
-        </tr>
-      </tbody>
-    );
-  }
-  if (!isLoading && isSuccess && districts.data?.length > 0) {
-    content = (
-      <tbody>
-        {districts.data.map((item, index) => (
-          <tr key={index} className="align-middle">
-            <td>{index + 1}</td>
-            <td>
-              <Button
-                className="me-2"
-                color="primary"
-                outline
-                onClick={() => showDistrict(item?.id)}
-              >
-                <span className="d-flex gap-2">
-                  <i className="bi bi-info-circle"></i>
-                  Info
-                </span>
-              </Button>
-            </td>
-            <td>{item?.district_name}</td>
-            <td>
-              <Status item={item} statusUpdate={statusUpdate} />
-            </td>
-            <td className="d-flex gap-2">
-              <ActionButton
-                id={item?.id}
-                handleUpdate={handleUpdate}
-                setDeleteItemId={setDeleteItemId}
-                setIsOpenAlert={setIsOpenAlert}
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    );
-  }
+  /** Button show hide for search and clear */
+  const lengthSearchField = isObjectValueExits(searchFields, searchTextFields);
 
   return (
-    <>
+    <div className="page-content">
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h5>Districts</h5>
-        <button
-          onClick={handleAddDoctor}
-          type="button"
-          className="btn btn-primary"
-        >
-          <span className="d-flex gap-2">
-            <i className="bi bi-plus-circle"></i>
-            Add District
-          </span>{" "}
-        </button>
-      </div>
-      <div>
-        <div
-          style={{ width: "1180px", height: "400px" }}
-          className="overflow-scroll"
-        >
-          <table className="table">
-            <thead>
-              <tr>
-                <th scope="col">SL</th>
-                <th>Info</th>
-                <th scope="col">District Name</th>
-
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
-              </tr>
-              <tr>
-                <th></th>
-                <th></th>
-                <td>
-                  <FromInput
-                    name="district_name"
-                    id="district_name"
-                    placeholder="Enter District Name"
-                    value={searchTextFields?.district_name}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </td>
-
-                <th>
-                  <FromSelect
-                    list={statusList ?? []}
-                    name="status"
-                    id="status"
-                    placeholder="Status"
-                    value={searchFields?.status ?? ""}
-                    onChange={handleOnChangeSelect}
-                  />
-                </th>
-
-                <SearchHandler
-                  searchFields={searchFields}
-                  searchTextFields={searchTextFields}
-                  handleSearch={handleAllSearch}
-                  cancelSearch={cancelSearch}
-                />
-              </tr>
-            </thead>
-            {content}
-          </table>
-
-          <DeleteAlert
-            isOpen={isOpenAlert}
-            setIsOpen={setIsOpenAlert}
-            handleDelete={handleDelete}
-            deleteItemId={deleteItemId}
-            setDeleteItemId={setDeleteItemId}
+        <div>
+          <h5 className="mb-3">
+            <i className="mdi mdi-city-variant text-primary me-1"></i>District
+          </h5>
+          <Breadcrumb
+            title={"Dashboard"}
+            list={[
+              { title: "Dashboard", to: "/dashboard" },
+              { title: "Districts", to: "/districts?page=1&limit=20" },
+            ]}
           />
-
-          <ToastContainer />
         </div>
-        <DistrictModal
-          editItem={isOpen && editItem}
-          setEditItem={setEditItem}
-          setIsOpen={setIsOpen}
-          isOpen={isOpen}
-          setToast={setToast}
-        />
+        <div>
+          <Button
+            size="sm"
+            className="btn btn-success"
+            onClick={() => {
+              setIsOpen(true);
+              setTitle("Add");
+              setEditItem({});
+            }}
+          >
+            <i class="ri-add-circle-line"></i>&nbsp;Add District
+          </Button>
+        </div>
+      </div>
+      <Card>
+        <CardBody>
+          <div className="table-responsive index-table">
+            <table className="table table-striped mb-0">
+              <thead className="table-light table-nowrap">
+                <tr role="row">
+                  <th style={{ minWidth: "50px" }}>SL</th>
+                  <th style={{ minWidth: "200px" }}>
+                    <div
+                      onClick={() => handleSort("name")}
+                      className="cursor-pointer text-decoration-underline me-1"
+                      style={{ cursor: "pointer", minWidth: "200px" }}
+                    >
+                      Name
+                      <i
+                        className={
+                          searchFields.sortBy === "name"
+                            ? searchFields.sortOrder === "ASC"
+                              ? "ri-sort-asc ms-1"
+                              : "ri-sort-desc ms-1"
+                            : "d-none"
+                        }
+                      ></i>
+                    </div>
+                  </th>
+                  <th style={{ minWidth: "150px" }}>Status</th>
+                  <th style={{ minWidth: "290px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td>
+                    <Input
+                      type="text"
+                      name="name"
+                      placeholder="Enter Name"
+                      onChange={handleOnChangeSearch}
+                      value={searchTextFields.name}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </td>
+                  <td>
+                    <Input
+                      name="status"
+                      type="select"
+                      onChange={handleOnChangeSearch}
+                      value={searchFields?.status}
+                    >
+                      <option value="">Select Status</option>
+                      {statusList.map((i) => (
+                        <option key={i.value} value={i?.value}>
+                          {i.text}
+                        </option>
+                      ))}
+                    </Input>
+                  </td>
+                  <td>
+                    {lengthSearchField !== 0 && (
+                      <>
+                        <Button
+                          color="success"
+                          className="btn-light-primary"
+                          outline
+                          size="sm"
+                          onClick={handleSearchSubmit}
+                        >
+                          <i class="ri-search-line"></i>&nbsp;Search
+                        </Button>
+                        &nbsp;
+                        <Button
+                          size="sm"
+                          color="danger"
+                          outline
+                          onClick={clearSearch}
+                        >
+                          <i class="ri-close-fill"></i>&nbsp;Cancel
+                        </Button>
+                      </>
+                    )}
+                  </td>
+                </tr>
 
-        <ShowDistrict
-          setIsOpen={setIsOpenShow}
-          isOpen={isOpenShow}
+                {content}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            total={meta?.total}
+            perPage={meta?.limit ? parseInt(meta?.limit) : limit}
+            setPerPage={setLimit}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+          />
+        </CardBody>
+      </Card>
+      {deleteItem?.id && (
+        <SweetAlert
+          deleteItem={deleteItem}
+          onCancel={() => setDeleteItem(null)}
+          onConfirm={() => {
+            deleteCity(deleteItem?.id);
+            setDeleteItem({});
+          }}
+          confirmBtnText="Yes, delete it!"
+        >
+          <p className="text-dark">
+            You want to delete{" "}
+            <strong className="text-dark fs-5">{deleteItem?.name}</strong>{" "}
+            district.
+          </p>
+        </SweetAlert>
+      )}
+      {isOpen && (
+        <DistrictModal
+          isOpen={isOpen}
           editItem={editItem}
           setEditItem={setEditItem}
+          isFetching={isFetching}
+          setToast={setToast}
+          title={title}
+          setTitle={setTitle}
+          setIsOpen={setIsOpen}
         />
-
-        <ReactPagination
-          total={districts?.total}
-          page={page}
-          limit={limit}
-          setPage={setPage}
-          setLimit={setLimit}
-        />
-      </div>
-    </>
+      )}
+    </div>
   );
 }
+
+export default ManageDistricts;

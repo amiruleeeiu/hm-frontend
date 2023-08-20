@@ -6,8 +6,6 @@ import { useGetRolesQuery } from "../../features/roleApi";
 export default function ManageRoles() {
   const { data: roles, isLoading, isSuccess, isError } = useGetRolesQuery();
 
-  console.log(roles);
-
   let content = null;
 
   if (isLoading && !isSuccess) {
@@ -27,7 +25,6 @@ export default function ManageRoles() {
   }
 
   if (!isLoading && isSuccess && roles?.data?.length > 0) {
-    console.log("roles");
     content = (
       <tbody>
         {roles?.data.map((item, index) => (

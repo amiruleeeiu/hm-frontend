@@ -13,7 +13,6 @@ export default function ShowShedule({
     setEditItem({});
   };
 
-  console.log(editItem);
 
   const { doctor_name, date, start_time, end_time, status } =
     editItem || {};

@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import Appointements from "./pages/Appointments/Appointements";
@@ -9,10 +9,11 @@ import ShowDoctor from "./pages/Doctors/ShowDoctor";
 import Locations from "./pages/Location/Locations";
 import Patients from "./pages/Patients/Patients";
 import ShowPatient from "./pages/Patients/ShowPatient";
-import Roles from "./pages/Roles/Roles";
 import RoleUpdate from "./pages/Roles/RoleUpdate";
+import Roles from "./pages/Roles/Roles";
 import Shedules from "./pages/Shedules/Shedules";
-import Upozila from "./pages/Upozilas/Upozila";
+import Upozila from "./pages/SubDistrict/SubDistrict";
+import SubDistrict from "./pages/SubDistrict/SubDistrict";
 
 function App() {
   return (
@@ -44,7 +45,7 @@ function App() {
             <Route path="/districts" element={<Districts />} />
           </Routes>
           <Routes>
-            <Route path="/upozilas" element={<Upozila />} />
+            <Route path="/sub-districts" element={<SubDistrict />} />
           </Routes>
           <Routes>
             <Route path="/locations" element={<Locations />} />
