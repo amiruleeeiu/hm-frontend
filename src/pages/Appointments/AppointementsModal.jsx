@@ -84,10 +84,7 @@ export default function AppointementsModal({
 
   const [totalShedules, setTotalShedules] = useState([]);
 
-  const [startDate, setStartDate] = useState("");
   const [doctorShedules, setDoctorShedules] = useState([]);
-
-  const [appointmentStartTime, setAppointmentStartTime] = useState([]);
 
   const [
     updateAppointment,
@@ -161,7 +158,6 @@ export default function AppointementsModal({
     setAutCompleteName({ doctor_id: "", doctor_name: "" });
     setSelectedDate(null);
     setTotalShedules([]);
-    setAppointmentStartTime([]);
   };
 
   useEffect(() => {
@@ -203,47 +199,7 @@ export default function AppointementsModal({
       });
       setSelectedDate(null);
     }
-
-    // const currentTimeObj = shedules?.data.filter(
-    //   (i) =>
-    //     new Date(i?.date).toLocaleDateString() ===
-    //       new Date(date).toLocaleDateString() &&
-    //     i?.doctor_id === formik?.values?.doctor_id
-    // );
-
-    // formik.setValues({
-    //   ...formik.values,
-    //   date,
-    //   start_time: currentTimeObj?.start_time,
-    //   end_time: currentTimeObj?.end_time,
-    // });
-
-    // setAppointmentStartTime(
-    //   currentTimeObj.map((i) => {
-    //     return {
-    //       name: tConvert(i?.start_time),
-    //       end_time: tConvert(i?.end_time),
-    //       id: i?.id,
-    //     };
-    //   })
-    // );
   };
-
-  // useEffect(() => {
-  //   if (formik.values?.start_time) {
-  //     const currentEndTime = appointmentStartTime.find(
-  //       (i) => i?.name === formik.values?.start_time
-  //     );
-
-  //     formik.setValues({
-  //       ...formik.values,
-  //       end_time: currentEndTime?.end_time,
-  //     });
-  //   } else {
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [formik.values?.start_time]);
-
   useEffect(() => {
     if (editItem?.id) {
       formik.setValues({ ...editItem });
@@ -482,10 +438,6 @@ export default function AppointementsModal({
   const getSheduleDate = (e) => {
     const date = new Date();
     const weaklyDate = [];
-    // if (e.find((j) => j.day == date.getDay())) {
-    //   weaklyDate.push(date);
-    // }
-    setStartDate(new Date());
 
     for (let i = 1; i <= 7; i++) {
       let newDate = new Date(date.setMilliseconds(24 * 60 * 60 * 1000));

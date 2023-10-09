@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Select from "react-select";
 import { useToasts } from "react-toast-notifications";
 import { Badge, Card, CardBody, Input, Spinner } from "reactstrap";
@@ -7,7 +7,6 @@ import Button from "../../components/bootstrap/Button";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Pagination from "../../components/common/Pagination";
 import SweetAlert from "../../components/common/SweetAlert";
-import { debounce } from "../../components/common/debounce";
 import {
   getUrlStrByObj,
   isObjectValueExits,
@@ -31,10 +30,6 @@ const searchFieldsData = {
   status: "",
   sortOrder: "",
   sortBy: "",
-  country_id: "",
-  country_name: "",
-  state_id: "",
-  state_name: "",
   page: 1,
   limit: 10,
 };
@@ -63,11 +58,10 @@ function ManageDoctors() {
 
   const [title, setTitle] = useState("Add");
 
-  const [countrySearchUrl, setCountrySearchUrl] = useState("");
-  const { data: countriesData, isFetching: countryfetching } =
-    useGetDistrictsQuery(countrySearchUrl, {
-      refetchOnMountOrArgChange: true,
-    });
+  const [districtSearchUrl, setDistrictSearchUrl] = useState("");
+  const { data: districtsData } = useGetDistrictsQuery(districtSearchUrl, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const [subDistrictSearchUrl, setSubDistrictSearchUrl] = useState("");
   const { data: subDistrict, isFetching: statefetching } =
@@ -78,7 +72,7 @@ function ManageDoctors() {
   const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
   const [editItem, setEditItem] = useState({});
   const {
-    data: country,
+    data: doctors,
     isSuccess,
     isFetching: isFetchingGetAll,
   } = useGetDoctorsQuery(urlString, {
@@ -286,7 +280,7 @@ function ManageDoctors() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length === 0
+    doctors?.data?.data?.length === 0
   ) {
     content = (
       <tr>
@@ -296,9 +290,9 @@ function ManageDoctors() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length > 0
+    doctors?.data?.data?.length > 0
   ) {
-    content = country?.data?.data.map((user, i) => {
+    content = doctors?.data?.data.map((user, i) => {
       return (
         <tr key={user.id}>
           <td>{i + 1}</td>
@@ -352,7 +346,7 @@ function ManageDoctors() {
     });
   }
 
-  let meta = country?.data?.meta;
+  let meta = doctors?.data?.meta;
 
   /** Handle Search */
   const handleOnChangeSearch = (e) => {
@@ -407,22 +401,7 @@ function ManageDoctors() {
     }
   };
 
-  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
-    const { country_id } = searchFields;
-    if (action === "input-change") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
-      } else {
-        debounce(`?name=${value}`, setUrlStr);
-      }
-    } else if (action === "input-blur") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}`, setUrlStr);
-      } else {
-        debounce(``, setUrlStr);
-      }
-    }
-  };
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {};
 
   /** Button show hide for search and clear */
   const lengthSearchField = isObjectValueExits(searchFields, searchTextFields);
@@ -620,20 +599,19 @@ function ManageDoctors() {
                         handleInputChange(
                           e,
                           action,
-                          setCountrySearchUrl,
+                          setDistrictSearchUrl,
                           "district_id"
                         )
                       }
                       isClearable={searchFields?.district_id ? true : false}
                       options={
-                        countriesData?.data?.data?.map((i) => ({
+                        districtsData?.data?.data?.map((i) => ({
                           label: i?.name,
                           value: i?._id,
                         })) ?? []
                       }
                       placeholder="Search district"
                       className="select2-selection"
-                      isLoading={countryfetching}
                     />
                   </td>
                   <td style={{ minWidth: "220px" }}>

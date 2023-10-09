@@ -7,7 +7,6 @@ import { Badge, Button, Card, CardBody, Input, Spinner } from "reactstrap";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Pagination from "../../components/common/Pagination";
 import SweetAlert from "../../components/common/SweetAlert";
-import { debounce } from "../../components/common/debounce";
 import {
   getUrlStrByObj,
   isObjectValueExits,
@@ -26,10 +25,6 @@ const searchFieldsData = {
   status: "",
   sortOrder: "",
   sortBy: "",
-  country_id: "",
-  country_name: "",
-  state_id: "",
-  state_name: "",
   page: 1,
   limit: 10,
 };
@@ -56,9 +51,9 @@ function ManageSubDistricts() {
 
   const [title, setTitle] = useState("Add");
 
-  const [countrySearchUrl, setCountrySearchUrl] = useState("");
+  const [districtSearchUrl, setDistrictSearchUrl] = useState("");
   const { data: districtsData, isFetching: districtFetching } =
-    useGetDistrictsQuery(countrySearchUrl, {
+    useGetDistrictsQuery(districtSearchUrl, {
       refetchOnMountOrArgChange: true,
     });
 
@@ -358,22 +353,7 @@ function ManageSubDistricts() {
     }
   };
 
-  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
-    const { country_id } = searchFields;
-    if (action === "input-change") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
-      } else {
-        debounce(`?name=${value}`, setUrlStr);
-      }
-    } else if (action === "input-blur") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}`, setUrlStr);
-      } else {
-        debounce(``, setUrlStr);
-      }
-    }
-  };
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {};
 
   /** Button show hide for search and clear */
   const lengthSearchField = isObjectValueExits(searchFields, searchTextFields);
@@ -465,7 +445,7 @@ function ManageSubDistricts() {
                         handleInputChange(
                           e,
                           action,
-                          setCountrySearchUrl,
+                          setDistrictSearchUrl,
                           "district_id"
                         )
                       }

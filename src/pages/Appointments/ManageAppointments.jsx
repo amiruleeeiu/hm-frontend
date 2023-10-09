@@ -16,7 +16,6 @@ import Button from "../../components/bootstrap/Button";
 import Breadcrumb from "../../components/common/Breadcrumb";
 import Pagination from "../../components/common/Pagination";
 import SweetAlert from "../../components/common/SweetAlert";
-import { debounce } from "../../components/common/debounce";
 import {
   getUrlStrByObj,
   isObjectValueExits,
@@ -481,22 +480,7 @@ function ManageAppointments() {
     }
   };
 
-  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
-    const { country_id } = searchFields;
-    if (action === "input-change") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
-      } else {
-        debounce(`?name=${value}`, setUrlStr);
-      }
-    } else if (action === "input-blur") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}`, setUrlStr);
-      } else {
-        debounce(``, setUrlStr);
-      }
-    }
-  };
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {};
 
   /** Button show hide for search and clear */
   const lengthSearchField = isObjectValueExits(searchFields, searchTextFields);

@@ -16,7 +16,6 @@ import {
   useGetDistrictQuery,
   useGetDistrictsQuery,
 } from "../../features/districtApi";
-import { useDeleteLocationMutation } from "../../features/locationApi";
 import DistrictModal from "./DistrictModal";
 
 const searchFieldsData = {
@@ -24,10 +23,6 @@ const searchFieldsData = {
   status: "",
   sortOrder: "",
   sortBy: "",
-  country_id: "",
-  country_name: "",
-  state_id: "",
-  state_name: "",
   page: 1,
   limit: 10,
 };
@@ -57,7 +52,7 @@ function ManageDistricts() {
   const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
   const [editItem, setEditItem] = useState({});
   const {
-    data: country,
+    data: district,
     isSuccess,
     isFetching: isFetchingGetAll,
   } = useGetDistrictsQuery(urlString, {
@@ -153,7 +148,7 @@ function ManageDistricts() {
   useEffect(() => {
     if (deleteSuccess) {
       setToast({
-        title: "City notification",
+        title: "District notification",
         message: deleteResponse?.message,
       });
     }
@@ -253,7 +248,7 @@ function ManageDistricts() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length === 0
+    district?.data?.data?.length === 0
   ) {
     content = (
       <tr>
@@ -263,9 +258,9 @@ function ManageDistricts() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length > 0
+    district?.data?.data?.length > 0
   ) {
-    content = country?.data?.data?.map((user, i) => {
+    content = district?.data?.data?.map((user, i) => {
       return (
         <tr key={user.id}>
           <td>{i + 1}</td>
@@ -317,7 +312,7 @@ function ManageDistricts() {
     });
   }
 
-  let meta = country?.data?.meta;
+  let meta = district?.data?.meta;
 
   /** Handle Search */
   const handleOnChangeSearch = (e) => {

@@ -27,10 +27,6 @@ const searchFieldsData = {
   status: "",
   sortOrder: "",
   sortBy: "",
-  country_id: "",
-  country_name: "",
-  state_id: "",
-  state_name: "",
   page: 1,
   limit: 10,
 };
@@ -57,9 +53,9 @@ function Location() {
 
   const [title, setTitle] = useState("Add");
 
-  const [countrySearchUrl, setCountrySearchUrl] = useState("");
-  const { data: countriesData, isFetching: countryfetching } =
-    useGetDistrictsQuery(countrySearchUrl, {
+  const [districtSearchUrl, setDistrictSearchUrl] = useState("");
+  const { data: districtsData, isFetching: districtfetching } =
+    useGetDistrictsQuery(districtSearchUrl, {
       refetchOnMountOrArgChange: true,
     });
 
@@ -72,7 +68,7 @@ function Location() {
   const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
   const [editItem, setEditItem] = useState({});
   const {
-    data: country,
+    data: location,
     isSuccess,
     isFetching: isFetchingGetAll,
   } = useGetLocationssQuery(urlString, {
@@ -265,7 +261,7 @@ function Location() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length === 0
+    location?.data?.data?.length === 0
   ) {
     content = (
       <tr>
@@ -275,9 +271,9 @@ function Location() {
   } else if (
     !isFetchingGetAll &&
     isSuccess &&
-    country?.data?.data?.length > 0
+    location?.data?.data?.length > 0
   ) {
-    content = country?.data?.data.map((user, i) => {
+    content = location?.data?.data.map((user, i) => {
       return (
         <tr key={user.id}>
           <td>{i + 1}</td>
@@ -331,7 +327,7 @@ function Location() {
     });
   }
 
-  let meta = country?.data?.meta;
+  let meta = location?.data?.meta;
 
   /** Handle Search */
   const handleOnChangeSearch = (e) => {
@@ -493,19 +489,19 @@ function Location() {
                         handleInputChange(
                           e,
                           action,
-                          setCountrySearchUrl,
+                          setDistrictSearchUrl,
                           "district_id"
                         )
                       }
                       isClearable={searchFields?.district_id ? true : false}
                       options={
-                        countriesData?.data?.data?.map((i) => ({
+                        districtsData?.data?.data?.map((i) => ({
                           label: i?.name,
                           value: i?._id,
                         })) ?? []
                       }
                       className="select2-selection"
-                      isLoading={countryfetching}
+                      isLoading={districtfetching}
                     />
                   </td>
                   <td>

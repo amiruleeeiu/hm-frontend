@@ -14,7 +14,6 @@ import {
   Spinner,
 } from "reactstrap";
 import FromInput from "../../components/FromInput";
-import { debounce } from "../../components/common/debounce";
 import { useGetDistrictsQuery } from "../../features/districtApi";
 import {
   useAddSubDistrictMutation,
@@ -116,7 +115,7 @@ export default function SubDistrictModal({
       setToast({ message: error?.data?.message, type: "error" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSuccess,error,isError]);
+  }, [isSuccess, error, isError]);
 
   console.log(formik);
 
@@ -152,22 +151,7 @@ export default function SubDistrictModal({
     }
   };
 
-  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
-    const { country_id } = formik.values;
-    if (action === "input-change") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
-      } else {
-        debounce(`?name=${value}`, setUrlStr);
-      }
-    } else if (action === "input-blur") {
-      if (fieldName === "state_id" && country_id) {
-        debounce(`?country_id=${country_id}`, setUrlStr);
-      } else {
-        debounce(``, setUrlStr);
-      }
-    }
-  };
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {};
   console.log(editItem);
   return (
     <form>
@@ -227,9 +211,7 @@ export default function SubDistrictModal({
           {title !== "View" && !isFetching && (
             <div className="row">
               <FormGroup row className="mt-3">
-                <Label for="subDistrict_id">
-                  District
-                </Label>
+                <Label for="subDistrict_id">District</Label>
                 <Col>
                   <Select
                     value={{
@@ -267,8 +249,8 @@ export default function SubDistrictModal({
               </FormGroup>
 
               <FormGroup row>
-                <Label >Sub-district Name</Label>
-                <Col >
+                <Label>Sub-district Name</Label>
+                <Col>
                   <FromInput
                     name="name"
                     id="name"
@@ -282,7 +264,9 @@ export default function SubDistrictModal({
                 </Col>
               </FormGroup>
               <FormGroup row>
-                <Label sm="2" className="mt-0 pt-0">Status</Label>
+                <Label sm="2" className="mt-0 pt-0">
+                  Status
+                </Label>
                 <Col sm="10">
                   <div className="d-flex mt-1">
                     <div>
