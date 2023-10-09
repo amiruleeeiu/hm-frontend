@@ -5,9 +5,8 @@ import logo from "../assets/images/706.jpg";
 export default function Sidebar() {
   const MENUES = [
     { title: "Doctor", path: "/doctors" },
-    { title: "Patient", path: "/patients" },
     { title: "Appointment", path: "/appointments" },
-    { title: "Roles", path: "/roles" },
+    // { title: "Roles", path: "/roles" },
     { title: "District", path: "/districts" },
     { title: "Sub-District", path: "/sub-districts" },
     { title: "Location", path: "/locations" },

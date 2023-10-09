@@ -1,14 +1,14 @@
 .dashboard {
   display: flex;
   .sidebar {
-    width: 11%;
+    width: 160px;
     height: 100vh;
     background: rgb(27, 158, 152);
     // text-align: center;
   }
   .dashboard-content {
     background: rgb(247, 246, 246);
-    width: 89%;
+    width: 88%;
     .header {
       background: rgb(27, 158, 152);
       position: fixed;
