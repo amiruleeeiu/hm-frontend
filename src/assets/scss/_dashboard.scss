@@ -1,13 +1,14 @@
 .dashboard {
   display: flex;
   .sidebar {
-    width: 15%;
+    width: 11%;
     height: 100vh;
     background: rgb(27, 158, 152);
     // text-align: center;
   }
   .dashboard-content {
-    width: 88%;
+    background: rgb(247, 246, 246);
+    width: 89%;
     .header {
       background: rgb(27, 158, 152);
       position: fixed;
@@ -22,6 +23,13 @@
       }
     }
   }
+}
+
+.form-control:focus,
+.css-13cymwt-control:focus,
+.form-select:focus {
+  box-shadow: none;
+  // border: 1px solid '$primary';
 }
 
 .permission_bg {

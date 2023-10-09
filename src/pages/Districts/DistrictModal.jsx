@@ -110,7 +110,7 @@ export default function DistrictModal({
 
   return (
     <form>
-      <Modal isOpen={isOpen} size="lg" toggle={toggle}>
+      <Modal isOpen={isOpen} size="md" toggle={toggle}>
         <ModalHeader toggle={toggle}>
           {title === "View" ? "" : title} District
           {!isFetching && title === "View" && (
@@ -161,8 +161,8 @@ export default function DistrictModal({
           {title !== "View" && !isFetching && (
             <div className="row">
               <FormGroup row>
-                <Label sm="2">District Name</Label>
-                <Col sm="10">
+                <Label >District Name</Label>
+                <Col >
                   <FromInput
                     name="name"
                     id="name"
@@ -178,7 +178,7 @@ export default function DistrictModal({
               <FormGroup row>
                 <Label sm="2">Status</Label>
                 <Col sm="10">
-                  <div className="d-flex">
+                  <div className="d-flex mt-2">
                     <div>
                       <input
                         type="radio"

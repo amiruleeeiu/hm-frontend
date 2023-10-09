@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import { Button, Card, CardBody } from "reactstrap";
 import Checkbox from "../../components/Checkbox";
-import DetailPageBreadcrumb from "../../components/DetailPageBreadcrumb";
 import { useGetRoleQuery, useUpdateRoleMutation } from "../../features/roleApi";
 
 export default function RoleUpdate() {
@@ -56,13 +55,7 @@ export default function RoleUpdate() {
 
   return (
     <div>
-      <div className="ms-3">
-        <DetailPageBreadcrumb
-          indexPage="Roles"
-          indexPageEndPoint={"/roles"}
-          activePage="Roles Update"
-        />
-      </div>
+      <div className="ms-3"></div>
       <div className="row ms-2">
         {permissions?.length > 0 &&
           permissions.map((i) => (
@@ -82,7 +75,7 @@ export default function RoleUpdate() {
           ))}
       </div>
       <div style={{ float: "right" }}>
-        <Button color="primary" onClick={handleSubmit} className='mb-3'>
+        <Button color="primary" onClick={handleSubmit} className="mb-3">
           <span className="d-flex gap-2">
             <i className="bi bi-pencil"></i>Update
           </span>

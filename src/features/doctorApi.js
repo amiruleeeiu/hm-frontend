@@ -6,6 +6,12 @@ export const doctorApi = apiSlice.injectEndpoints({
       query: (url) => `/doctors${url}`,
       providesTags: ["doctors"],
     }),
+    getSpecialests: builder.query({
+      query: () => `/specialest`,
+    }),
+    getTitles: builder.query({
+      query: () => `/titles`,
+    }),
     getDoctor: builder.query({
       query: (id) => `/doctors/${id}`,
     }),
@@ -18,11 +24,11 @@ export const doctorApi = apiSlice.injectEndpoints({
       invalidatesTags: ["doctors"],
     }),
     updateDoctor: builder.mutation({
-      query: ({ _id, data }) => {
-        console.log(_id);
+      query: ({ id, data }) => {
+        console.log(id);
         console.log(data);
         return ({
-          url: `/doctors/${_id}`,
+          url: `/doctors/${id}`,
           method: "PUT",
           body: data,
         })
@@ -40,6 +46,8 @@ export const doctorApi = apiSlice.injectEndpoints({
 });
 
 export const {
+  useGetSpecialestsQuery,
+  useGetTitlesQuery,
   useGetDoctorsQuery,
   useGetDoctorQuery,
   useAddDoctorMutation,

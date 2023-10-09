@@ -171,7 +171,7 @@ export default function SubDistrictModal({
   console.log(editItem);
   return (
     <form>
-      <Modal isOpen={isOpen} size="lg" toggle={toggle}>
+      <Modal isOpen={isOpen} size="md" toggle={toggle}>
         <ModalHeader toggle={toggle}>
           {title === "View" ? "" : title} Sub-District
           {!isFetching && title === "View" && (
@@ -227,10 +227,10 @@ export default function SubDistrictModal({
           {title !== "View" && !isFetching && (
             <div className="row">
               <FormGroup row className="mt-3">
-                <Label for="subDistrict_id" sm="2">
+                <Label for="subDistrict_id">
                   District
                 </Label>
-                <Col lm="10">
+                <Col>
                   <Select
                     value={{
                       value: autoCompleteName?.district_id,
@@ -267,8 +267,8 @@ export default function SubDistrictModal({
               </FormGroup>
 
               <FormGroup row>
-                <Label sm="2">Sub-district Name</Label>
-                <Col sm="10">
+                <Label >Sub-district Name</Label>
+                <Col >
                   <FromInput
                     name="name"
                     id="name"
@@ -282,9 +282,9 @@ export default function SubDistrictModal({
                 </Col>
               </FormGroup>
               <FormGroup row>
-                <Label sm="2">Status</Label>
+                <Label sm="2" className="mt-0 pt-0">Status</Label>
                 <Col sm="10">
-                  <div className="d-flex">
+                  <div className="d-flex mt-1">
                     <div>
                       <input
                         type="radio"

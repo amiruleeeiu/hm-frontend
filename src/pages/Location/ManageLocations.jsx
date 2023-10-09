@@ -32,7 +32,7 @@ const searchFieldsData = {
   state_id: "",
   state_name: "",
   page: 1,
-  limit: 20,
+  limit: 10,
 };
 
 const searchTextFieldsData = {

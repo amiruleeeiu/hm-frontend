@@ -12,6 +12,7 @@ import {
 } from "../../components/common/listDataHelper";
 import { statusList } from "../../components/common/statusList";
 import {
+  useDeleteDistrictMutation,
   useGetDistrictQuery,
   useGetDistrictsQuery,
 } from "../../features/districtApi";
@@ -28,7 +29,7 @@ const searchFieldsData = {
   state_id: "",
   state_name: "",
   page: 1,
-  limit: 20,
+  limit: 10,
 };
 
 const searchTextFieldsData = {
@@ -70,7 +71,7 @@ function ManageDistricts() {
       isLoading: deleteLoading,
       isSuccess: deleteSuccess,
     },
-  ] = useDeleteLocationMutation();
+  ] = useDeleteDistrictMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState({});

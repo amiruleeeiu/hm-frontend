@@ -45,21 +45,32 @@ tbody {
   }
 }
 
-td,th{
+td,
+th {
   padding: 10px 15px !important;
 }
 
-.table{
+.table {
   padding: 20px 0px;
-  
 }
 
-.table-striped>tbody>tr:nth-of-type(even)>* {
+.table-striped > tbody > tr:nth-of-type(even) > * {
   --bs-table-accent-bg: var(--bs-table-striped-bg);
   color: var(--bs-table-striped-color) !important;
 }
 
-.table-striped>tbody>tr:nth-of-type(odd)>* {
+.table-striped > tbody > tr:nth-of-type(odd) > * {
   --bs-table-accent-bg: white;
   color: var(--bs-table-striped-color) !important;
+}
+
+.accordion-collapse {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.5s ease; /* Adjust the duration and easing as needed */
+}
+
+.accordion-collapse.show {
+  height: auto;
+  transition: height 0.5s ease; /* Adjust the duration and easing as needed */
 }

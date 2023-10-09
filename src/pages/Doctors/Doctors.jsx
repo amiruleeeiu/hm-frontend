@@ -1,5 +1,4 @@
 import React from "react";
-import Breadcrumb from "../../components/Breadcrumb";
 import Layout from "../../components/Layout";
 import ManageDoctors from "./ManageDoctors";
 

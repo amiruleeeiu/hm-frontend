@@ -20,9 +20,24 @@ export const appointmentApi = apiSlice.injectEndpoints({
     updateAppointment: builder.mutation({
       query: ({ id, data }) => ({
         url: `/appointments/${id}`,
-        method: "PATCH",
+        method: "PUT",
         body: data,
       }),
+      invalidatesTags:(data)=> data && ["appointments"],
+    }),
+    changeStatus: builder.mutation({
+      query: ({ id, data }) => {
+        console.log(id)
+        console.log(data)
+        return (
+          {
+            url: `/appointments/change-status/${id}`,
+            method: "PUT",
+            body: data,
+          }
+        )
+      },
+      
       invalidatesTags: ["appointments"],
     }),
     deleteAppointment: builder.mutation({
@@ -39,6 +54,7 @@ export const {
   useGetAppointmentsQuery,
   useAddAppointmentMutation,
   useDeleteAppointmentMutation,
+  useChangeStatusMutation,
   useGetAppointmentQuery,
   useUpdateAppointmentMutation,
 } = appointmentApi;

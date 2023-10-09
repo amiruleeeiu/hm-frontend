@@ -32,7 +32,7 @@ export default function LocationModal({
   setEditItem,
   setToast,
 }) {
-  const [addLocation, { error, isError, isLoading, isSuccess }] =
+  const [addLocation, { locationData, error, isError, isLoading, isSuccess }] =
     useAddLocationMutation();
 
   const [districtSearchUrl, setDistrictSearchUrl] = useState("");
@@ -126,6 +126,7 @@ export default function LocationModal({
 
   useEffect(() => {
     if (isSuccess) {
+      console.log(locationData);
       setToast({ message: "Successfully Added" });
       toggle();
     }
@@ -137,10 +138,9 @@ export default function LocationModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess, isError, error]);
 
-  console.log(formik);
-
   useEffect(() => {
     if (isUpdateSuccess) {
+      console.log(locationData);
       setToast({ message: "Successfully Updated", fetch: true });
       toggle();
     }
@@ -236,10 +236,10 @@ export default function LocationModal({
       }
     }
   };
-  console.log(formik?.values?.status);
+  
   return (
     <form>
-      <Modal isOpen={isOpen} size="lg" toggle={toggle}>
+      <Modal isOpen={isOpen} size="md" toggle={toggle}>
         <ModalHeader toggle={toggle}>
           {title === "View" ? "" : title} Location
           {!isFetching && title === "View" && (
@@ -299,10 +299,10 @@ export default function LocationModal({
           {title !== "View" && !isFetching && (
             <div className="row">
               <FormGroup row className="mt-3">
-                <Label for="subDistrict_id" sm="2">
+                <Label for="subDistrict_id" >
                   District
                 </Label>
-                <Col lm="10">
+                <Col>
                   <Select
                     value={{
                       value: autoCompleteName?.district_id,
@@ -338,10 +338,10 @@ export default function LocationModal({
                 </Col>
               </FormGroup>
               <FormGroup row className="">
-                <Label for="subDistrict_id" sm="2">
+                <Label for="subDistrict_id">
                   Sub-district
                 </Label>
-                <Col lm="10">
+                <Col >
                   <Select
                     id="subDistrict_id"
                     value={{
@@ -381,8 +381,8 @@ export default function LocationModal({
                 </Col>
               </FormGroup>
               <FormGroup row>
-                <Label sm="2">Location Name</Label>
-                <Col sm="10">
+                <Label >Location Name</Label>
+                <Col >
                   <FromInput
                     name="name"
                     id="name"
@@ -396,7 +396,7 @@ export default function LocationModal({
                 </Col>
               </FormGroup>
               <FormGroup row>
-                <Label sm="2">Status</Label>
+                <Label sm="2" className="pt-0">Status</Label>
                 <Col sm="10">
                   <div className="d-flex">
                     <div>

@@ -1,488 +1,761 @@
-import React, { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import { Button } from "reactstrap";
-import ActionButton from "../../components/ActionButton";
-import DeleteAlert from "../../components/DeleteAlert";
-import formatValue from "../../components/formatValue";
-import FromInput from "../../components/FromInput";
-import FromSelect from "../../components/FromSelect";
-import { statusList } from "../../components/list";
-import ReactPagination from "../../components/ReactPagination";
-import { searchUrl } from "../../components/searchFields";
-import SearchHandler from "../../components/SearchHandler";
-import SearchSelect from "../../components/SearchSelect";
-import Status from "../../components/Status";
+import React, { useEffect, useRef, useState } from "react";
+import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import Select from "react-select";
+import { useToasts } from "react-toast-notifications";
+import { Badge, Card, CardBody, Input, Spinner } from "reactstrap";
+import Button from "../../components/bootstrap/Button";
+import Breadcrumb from "../../components/common/Breadcrumb";
+import Pagination from "../../components/common/Pagination";
+import SweetAlert from "../../components/common/SweetAlert";
+import { debounce } from "../../components/common/debounce";
+import {
+  getUrlStrByObj,
+  isObjectValueExits,
+} from "../../components/common/listDataHelper";
+import { statusList } from "../../components/common/statusList";
+import { getValue } from "../../components/helpers/reactSelectHelpers";
+import { useGetDistrictsQuery } from "../../features/districtApi";
 import {
   useDeleteDoctorMutation,
   useGetDoctorQuery,
   useGetDoctorsQuery,
-  useUpdateDoctorMutation,
+  useGetSpecialestsQuery,
+  useGetTitlesQuery,
 } from "../../features/doctorApi";
-import DoctorsModal, {
-  doctorTitles,
-  locationList,
-  options,
-} from "./DoctorsModal";
+import { useGetInstitutesQuery } from "../../features/instituteApi";
+import { useGetSubDistrictsQuery } from "../../features/subDistrictApi";
+import DoctorModal from "./DoctorModal";
 
-const searchTextFieldsName = {
-  first_name: "",
-  phone: "",
-  email: "",
-};
-
-const searchFieldsName = {
-  first_name: "",
-  phone: "",
+const searchFieldsData = {
   name: "",
-  specialest: "",
-  title: "",
-  collegeHospital: "",
-  location: "",
   status: "",
+  sortOrder: "",
+  sortBy: "",
+  country_id: "",
+  country_name: "",
+  state_id: "",
+  state_name: "",
   page: 1,
   limit: 10,
 };
 
-const specialestData = [
-  { name: "Medicin", id: "1" },
-  { name: "NeuroMedicin", id: "2" },
-  { name: "Nose Hair", id: "3" },
-  { name: "Dentiest", id: "4" },
-];
-
-const autoCompleteFieldName = {
-  collegeHospital: "",
-  location: "",
+const searchTextFieldsData = {
+  name: "",
 };
 
-export default function ManageDoctors() {
-  const [isOpen, setIsOpen] = useState(false);
+function ManageDoctors() {
+  document.title = `Doctor`;
 
-  const [isOpenAlert, setIsOpenAlert] = useState(false);
-  const [editItem, setEditItem] = useState({});
-  const [deleteItemId, setDeleteItemId] = useState(null);
+  const { addToast } = useToasts();
+
+  const navigate = useNavigate();
 
   const { search } = useLocation();
-
+  const firstRender = useRef(true);
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentParams = Object.fromEntries([...searchParams]);
+  let initialSearchFieldsData = { ...searchFieldsData, ...currentParams };
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [searchFields, setSearchFields] = useState(searchFieldsName);
-
+  const [searchFields, setSearchFields] = useState(initialSearchFieldsData);
   const [searchTextFields, setSearchTextFields] =
-    useState(searchTextFieldsName);
+    useState(searchTextFieldsData);
 
-  const [autoCompleteName, setAutCompleteName] = useState(
-    autoCompleteFieldName
-  );
+  const [title, setTitle] = useState("Add");
 
-  const [limit, setLimit] = useState(10);
-  const [page, setPage] = useState(1);
-  const [toastObj, setToast] = useState({});
+  const [countrySearchUrl, setCountrySearchUrl] = useState("");
+  const { data: countriesData, isFetching: countryfetching } =
+    useGetDistrictsQuery(countrySearchUrl, {
+      refetchOnMountOrArgChange: true,
+    });
 
-  const [urlString, setUrlString] = useState(``);
+  const [subDistrictSearchUrl, setSubDistrictSearchUrl] = useState("");
+  const { data: subDistrict, isFetching: statefetching } =
+    useGetSubDistrictsQuery(subDistrictSearchUrl, {
+      refetchOnMountOrArgChange: true,
+    });
+
+  const [urlString, setUrlString] = useState(search ?? "?page=1&limit=10");
+  const [editItem, setEditItem] = useState({});
   const {
-    data: doctors,
-    isLoading,
+    data: country,
     isSuccess,
-    error,
-  } = useGetDoctorsQuery(urlString, { refetchOnMountorArgChange: true });
-
-  const [doctorId, setDoctorId] = useState("");
-  const {
-    data: showDoctor,
-    isSuccess: isShowDoctorSuccess,
-    isFetching,
-    refetch,
-  } = useGetDoctorQuery(doctorId, {
-    refetchOnMountorArgChange: true,
+    isFetching: isFetchingGetAll,
+  } = useGetDoctorsQuery(urlString, {
+    refetchOnMountOrArgChange: true,
   });
 
-  const [deleteDoctor, { isSuccess: isDeleteSuccess }] =
-    useDeleteDoctorMutation();
-
   const [
-    updateDoctor,
-    { isSuccess: isUpdateSuccess, isLoading: isUpdateLoading },
-  ] = useUpdateDoctorMutation();
+    deleteCity,
+    {
+      data: deleteResponse,
+      isLoading: deleteLoading,
+      isSuccess: deleteSuccess,
+    },
+  ] = useDeleteDoctorMutation();
 
-  const statusUpdate = (data, e) => {
-    console.log(e);
-    console.log(data);
-    updateDoctor({ id: data?.id, data: { ...data, status: e } });
-  };
+  const [isOpen, setIsOpen] = useState(false);
+  const [deleteItem, setDeleteItem] = useState({});
+  const [toast, setToast] = useState({});
+
+  // // BEGIN :: Upcoming Events
+  // const [upcomingEventsInfoOffcanvas, setUpcomingEventsInfoOffcanvas] = useState(false);
+
+  const [limit, setLimit] = useState(10);
+
+  const { data: specialestData, isFetching: specialestFetching } =
+    useGetSpecialestsQuery();
+  const { data: titlesData, isFetching: titleFetching } = useGetTitlesQuery();
+
+  const [instituteSearchUrl, setInstituteSearchUrl] = useState("");
+  const { data: instituteData, isFetching: instituteFetching } =
+    useGetInstitutesQuery(instituteSearchUrl, {
+      refetchOnMountOrArgChange: true,
+    });
+
+  const [fetchCondition, setFetchCondition] = useState({
+    id: null,
+    skip: true,
+  });
+
+  const {
+    data: showItem,
+    isSuccess: isShowSuccess,
+    refetch,
+    isFetching,
+  } = useGetDoctorQuery(fetchCondition.id, {
+    skip: fetchCondition.skip,
+    refetchOnMountOrArgChange: true,
+  });
 
   useEffect(() => {
-    if (toastObj?.message) {
-      toast.success(toastObj?.message, { autoClose: 1000 });
+    if (!isFetching && isShowSuccess) {
+      setEditItem(showItem?.data);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toastObj]);
 
-  useEffect(() => {
-    let url = searchUrl(searchFields);
-    if (url.length > 0) {
-      url = "?".concat(url);
-    }
-    console.log("search");
-    console.log(url);
-    setUrlString(url);
-    setSearchParams(url);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchFields]);
+  }, [isShowSuccess, showItem, isFetching, isSuccess]);
 
-  const handleUpdate = (id) => {
-    setIsOpen(true);
-    if (doctorId === id) {
+  const handleUpcomingDetails = (user, type) => {
+    if (fetchCondition?.id === user.id) {
       refetch();
     } else {
-      setDoctorId(id);
+      setFetchCondition({ id: user.id, skip: false });
     }
+    setTitle(type);
+    setIsOpen(true);
   };
 
-  useEffect(() => {
-    setSearchFields({ ...searchFields, page: page, limit: limit });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
+  /** Set Page and search field */
+  const setPageAndSearchFields = (page, searchFieldObj) => {
+    setCurrentPage(page);
+    setSearchFields(searchFieldObj);
+  };
 
+  /** Use Effet for search filter and sort */
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+
+      return;
+    }
+    const urlStr = getUrlStrByObj(searchFields);
+    setSearchParams(urlStr);
+    setUrlString(urlStr);
+
+    /* eslint-disable react-hooks/exhaustive-deps */
+  }, [searchFields]);
+
+  /** This is for set search filter and soting value after page refresh */
   useEffect(() => {
     if (search) {
-      const result = Object.fromEntries([...searchParams]);
-
-      const {
-        first_name,
-        email,
-        phone,
-        specialest,
-        title,
-        location,
-        collegeHospital,
-      } = result;
-      setSearchFields({
-        ...searchFields,
-        first_name,
-        email,
-        phone,
-        specialest,
-        title,
-        location,
-        collegeHospital,
+      const params = Object.fromEntries([...searchParams]);
+      //setPageAndSearchFields(parseInt(params?.page), params);
+      setSearchTextFields({
+        ...searchTextFields,
+        ...params,
       });
-      setSearchTextFields({ ...searchTextFields, first_name, email, phone });
-      setAutCompleteName({ ...autoCompleteName, location, collegeHospital });
     }
+    return () => {};
   }, []);
 
+  // /** Delete  response action */
   useEffect(() => {
-    if (!isFetching && isShowDoctorSuccess) {
-      setEditItem(showDoctor);
+    if (deleteSuccess) {
+      setToast({
+        title: "City notification",
+        message: deleteResponse?.message,
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFetching, isShowDoctorSuccess, showDoctor]);
+  }, [deleteResponse, deleteSuccess]);
 
-  const handleAddDoctor = () => {
-    setIsOpen(true);
-    setEditItem({});
-  };
+  /** Toast message trigger */
+  useEffect(() => {
+    const content = (
+      <div>
+        <strong>Location Notification</strong>
+        <p>{toast?.message}</p>
+      </div>
+    );
+    if (toast?.message) {
+      addToast(content, {
+        appearance: toast?.type ? toast?.type : "success",
+        autoDismiss: true,
+        autoDismissTimeout: 2000,
+      });
+    }
+  }, [toast]);
+  /** Per page limit*/
+  useEffect(() => {
+    if (limit) {
+      setPageAndSearchFields(1, { ...searchFields, limit });
+    }
+  }, [limit]);
 
-  const handleDelete = (id) => {
-    deleteDoctor(id);
-    setIsOpenAlert(false);
-  };
-
-  const handleChange = (e) => {
-    setSearchTextFields({
-      ...searchTextFields,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleKeyDown = (e) => {
-    if (e?.key === "Enter") {
-      setSearchFields({
+  useEffect(() => {
+    if (currentPage) {
+      setPageAndSearchFields(currentPage, {
         ...searchFields,
-        ...searchTextFields,
-        [e.target.name]: e.target.value,
+        page: currentPage,
+        limit,
       });
     }
-  };
+  }, [currentPage]);
 
-  
+  /** Handle Pagination */
 
-  const handleOnChangeSelect = (e) => {
-    setSearchFields({
+  /** Handle Sorting */
+  const handleSort = (sortBy) => {
+    let page = 1;
+    let sortOrder = searchFields?.sortOrder === "ASC" ? "DESC" : "ASC";
+    setPageAndSearchFields(page, {
       ...searchFields,
-      ...searchTextFields,
-      [e.target.name]: e.target.value,
+      page,
+      sortOrder,
+      sortBy,
     });
   };
 
-  const handleSearchChange = (e, type) => {
-    if (e) {
-      setAutCompleteName({
-        ...autoCompleteName,
-        [type]: e.value,
-      });
-    } else {
-      setAutCompleteName({
-        ...autoCompleteName,
-        [type]: "",
-      });
-      setSearchFields({ ...searchFields, [type]: "" });
+  /** Submit by Enter */
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      let margeObject = { ...searchFields, ...searchTextFields };
+      const { name, value } = e.target;
+      setPageAndSearchFields(1, { ...margeObject, [name]: value, page: 1 });
     }
-
-    setSearchFields({ ...searchFields, ...searchTextFields, [type]: e.value });
   };
 
-  const handleAllSearch = () => {
-    setSearchFields({ ...searchFields, ...searchTextFields });
+  /** Search Submit */
+  const handleSearchSubmit = () => {
+    let margeObject = { ...searchFields, ...searchTextFields };
+    setPageAndSearchFields(1, { ...margeObject, page: 1 });
   };
 
-  console.log(doctors);
-
-  const cancelSearch = () => {
-    setSearchFields(searchFieldsName);
-    setSearchTextFields(searchTextFieldsName);
-    setAutCompleteName(autoCompleteFieldName);
-    setPage(1);
-    setLimit(10);
+  const handleView = (url) => {
+    // refetch();
+    navigate(url);
   };
 
+  /** Clear Search */
+  const clearSearch = () => {
+    setSearchParams({});
+    setPageAndSearchFields(1, searchFieldsData);
+    setSearchTextFields(searchTextFieldsData);
+  };
+
+  /** Delete */
+  /** Content */
   let content = null;
+  if (isFetchingGetAll || deleteLoading) {
+    content = (
+      <tr>
+        <td colSpan={6}>
+          <div className="text-center my-5 py-5">
+            <Spinner
+              style={{
+                height: "3rem",
+                width: "3rem",
+              }}
+              color="primary"
+              type="grow"
+            />
+          </div>
+        </td>
+      </tr>
+    );
+  } else if (
+    !isFetchingGetAll &&
+    isSuccess &&
+    country?.data?.data?.length === 0
+  ) {
+    content = (
+      <tr>
+        <td colSpan={11}>{"No Record Found"}</td>
+      </tr>
+    );
+  } else if (
+    !isFetchingGetAll &&
+    isSuccess &&
+    country?.data?.data?.length > 0
+  ) {
+    content = country?.data?.data.map((user, i) => {
+      return (
+        <tr key={user.id}>
+          <td>{i + 1}</td>
 
-  if (isLoading && !isSuccess) {
-    content = (
-      <tbody>
-        <tr>
-          <td>Loading...</td>
+          <td>{user?.name}</td>
+
+          <td>{user?.phone}</td>
+          <td>{user?.email}</td>
+          <td>{user?.specialest_id?.name}</td>
+          <td>{user?.institute_id?.name}</td>
+          <td>{user?.title_id?.name}</td>
+          <td>{user?.district_id?.name}</td>
+          <td>{user?.subDistrict_id?.name}</td>
+          <td>
+            <Badge color={user.status == 1 ? "success" : "danger"}>
+              {user?.status == 1 ? "Active" : "Inactive"}
+            </Badge>
+          </td>
+
+          <td>
+            <Button
+              onClick={() => handleView(`/doctors/${user.id}`)}
+              size="sm"
+              color="success"
+            >
+              <i class="ri-eye-line"></i>&nbsp; View
+            </Button>
+            &nbsp;
+            <Button
+              icon="bi bi-pencil"
+              size="sm"
+              color="primary"
+              onClick={() => {
+                handleUpcomingDetails(user, "Edit");
+              }}
+            >
+              Edit
+            </Button>
+            &nbsp;
+            <Button
+              icon="ri-delete-bin-6-line"
+              size="sm"
+              color="danger"
+              onClick={() => setDeleteItem(user)}
+            >
+              Delete
+            </Button>
+          </td>
         </tr>
-      </tbody>
-    );
+      );
+    });
   }
-  if (!isLoading && isSuccess && doctors?.length === 0) {
-    content = (
-      <tbody>
-        <tr>
-          <td>There is no doctos.</td>
-        </tr>
-      </tbody>
-    );
-  }
-  if (!isLoading && isSuccess && doctors?.length > 0) {
-    content = (
-      <tbody>
-        {doctors.map((item, index) => (
-          <tr key={index} className="align-middle">
-            <td>{index + 1}</td>
-            <td>
-              <Link to={`/doctors/${item?._id}`}>
-                <Button className="me-2" color="primary" outline>
-                  <span className="d-flex gap-2">
-                    <i className="bi bi-info-circle"></i>
-                    Info
-                  </span>
-                </Button>
-              </Link>
-            </td>
-            <td>{item?.doctor_name}</td>
-            <td>{item?.phone}</td>
-            <td>{item?.email}</td>
-            <td>{item?.specialest}</td>
-            <td>{item?.title}</td>
-            <td>{item?.collegeHospital}</td>
-            <td>{item?.location?.location_name}</td>
-            <td>
-              <Status item={item} statusUpdate={statusUpdate} />
-            </td>
-            <td className="d-flex gap-2">
-              <ActionButton
-                id={item?._id}
-                handleUpdate={handleUpdate}
-                setDeleteItemId={setDeleteItemId}
-                setIsOpenAlert={setIsOpenAlert}
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    );
-  }
+
+  let meta = country?.data?.meta;
+
+  /** Handle Search */
+  const handleOnChangeSearch = (e) => {
+    const { name, value, type } = e.target;
+
+    if (type === "select-one") {
+      let margeObject = { ...searchFields, ...searchTextFields };
+      setPageAndSearchFields(1, { ...margeObject, [name]: value, page: 1 });
+    } else {
+      setSearchTextFields({
+        ...searchTextFields,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleSelectChange = (e, fieldId, fieldName) => {
+    if (fieldId === "district_id") {
+      if (e) {
+        setPageAndSearchFields(1, {
+          ...searchFields,
+          district_id: e?.value,
+          district_name: e?.label,
+          subDistrict_id: "",
+          subDistrict_name: "",
+        });
+        setSubDistrictSearchUrl(`?district_id=${e?.value}`);
+      } else {
+        setPageAndSearchFields(1, {
+          ...searchFields,
+          district_id: "",
+          district_name: "",
+          subDistrict_id: "",
+          subDistrict_name: "",
+        });
+        setSubDistrictSearchUrl("");
+      }
+    } else {
+      if (e) {
+        setPageAndSearchFields(1, {
+          ...searchFields,
+          [fieldId]: e?.value,
+          [fieldName]: e?.label,
+        });
+      } else {
+        setPageAndSearchFields(1, {
+          ...searchFields,
+          [fieldId]: "",
+          [fieldName]: "",
+        });
+      }
+    }
+  };
+
+  const handleInputChange = (value, { action }, setUrlStr, fieldName) => {
+    const { country_id } = searchFields;
+    if (action === "input-change") {
+      if (fieldName === "state_id" && country_id) {
+        debounce(`?country_id=${country_id}&name=${value}`, setUrlStr);
+      } else {
+        debounce(`?name=${value}`, setUrlStr);
+      }
+    } else if (action === "input-blur") {
+      if (fieldName === "state_id" && country_id) {
+        debounce(`?country_id=${country_id}`, setUrlStr);
+      } else {
+        debounce(``, setUrlStr);
+      }
+    }
+  };
+
+  /** Button show hide for search and clear */
+  const lengthSearchField = isObjectValueExits(searchFields, searchTextFields);
 
   return (
-    <>
+    <div className="page-content">
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h5>Doctors</h5>
-        <button
-          onClick={handleAddDoctor}
-          type="button"
-          className="btn btn-primary"
-        >
-          <span className="d-flex gap-2">
-            <i className="bi bi-plus-circle"></i>
-            Add Doctor
-          </span>{" "}
-        </button>
-      </div>
-      <div>
-        <div
-          style={{ width: "1180px", height: "400px" }}
-          className="overflow-scroll"
-        >
-          <table className="table">
-            <thead>
-              <tr>
-                <th scope="col" style={{ minWidth: "60px" }}>
-                  SL
-                </th>
-                <th>Info</th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Full Name
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Phone
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Email
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Specialest
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Title
-                </th>
-                <th scope="col" style={{ minWidth: "200px" }}>
-                  College/Hospital
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Location
-                </th>
-                <th scope="col" style={{ minWidth: "160px" }}>
-                  Status
-                </th>
-                <th scope="col" style={{ minWidth: "150px" }}>
-                  Actions
-                </th>
-              </tr>
-              <tr>
-                <th></th>
-                <th></th>
-                <th>
-                  <FromInput
-                    name="first_name"
-                    id="first_name"
-                    placeholder="Enter Name"
-                    value={searchTextFields?.first_name}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </th>
-                <th>
-                  <FromInput
-                    name="phone"
-                    id="phone"
-                    placeholder="Enter Phone"
-                    value={searchTextFields?.phone}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </th>
-                <th>
-                  <FromInput
-                    name="email"
-                    id="email"
-                    placeholder="Enter Email"
-                    value={searchTextFields?.email}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                </th>
-                <th>
-                  <FromSelect
-                    list={specialestData ?? []}
-                    name="specialest"
-                    id="specialest"
-                    placeholder="Specialest"
-                    value={searchFields?.specialest ?? ""}
-                    onChange={handleOnChangeSelect}
-                  />
-                </th>
-                <th>
-                  <FromSelect
-                    list={doctorTitles ?? []}
-                    name="title"
-                    id="title"
-                    placeholder="Title"
-                    value={searchFields?.title ?? ""}
-                    onChange={handleOnChangeSelect}
-                  />
-                </th>
-                <td>
-                  <SearchSelect
-                    list={options ?? []}
-                    value={formatValue(
-                      autoCompleteName?.collegeHospital,
-                      " College/Hospital"
-                    )}
-                    name="collegeHospital"
-                    onChange={(e) => handleSearchChange(e, "collegeHospital")}
-                  />
-                </td>
-                <td>
-                  <SearchSelect
-                    list={locationList ?? []}
-                    value={formatValue(autoCompleteName?.location, "Location")}
-                    name="location"
-                    onChange={(e) => handleSearchChange(e, "location")}
-                  />
-                </td>
-
-                <th>
-                  <FromSelect
-                    list={statusList ?? []}
-                    name="status"
-                    id="status"
-                    placeholder="Status"
-                    value={searchFields?.status ?? ""}
-                    onChange={handleOnChangeSelect}
-                  />
-                </th>
-
-                <SearchHandler
-                  searchFields={searchFields}
-                  searchTextFields={searchTextFields}
-                  handleSearch={handleAllSearch}
-                  cancelSearch={cancelSearch}
-                />
-              </tr>
-            </thead>
-            {content}
-          </table>
-
-          <DeleteAlert
-            isOpen={isOpenAlert}
-            setIsOpen={setIsOpenAlert}
-            handleDelete={handleDelete}
-            deleteItemId={deleteItemId}
-            setDeleteItemId={setDeleteItemId}
+        <div>
+          <h5 className="mb-3">
+            <i className="mdi mdi-city-variant text-primary me-1"></i>Doctor
+          </h5>
+          <Breadcrumb
+            title={"Dashboard"}
+            list={[
+              { title: "Dashboard", to: "/dashboard" },
+              { title: "Doctors", to: "/doctors?page=1&limit=20" },
+            ]}
           />
-          <DoctorsModal
-            editItem={editItem}
-            isOpen={isOpen}
-            setIsOpen={setIsOpen}
-            setToast={setToast}
-            setEditItem={setEditItem}
-          />
-          <ToastContainer />
         </div>
-
-        <ReactPagination
-          total={doctors?.total}
-          page={page}
-          limit={limit}
-          setPage={setPage}
-          setLimit={setLimit}
-        />
+        <div>
+          <Button
+            icon="ri-add-circle-line"
+            size="sm"
+            color="success"
+            onClick={() => {
+              setIsOpen(true);
+              setTitle("Add");
+              setEditItem({});
+            }}
+          >
+            Add Doctor
+          </Button>
+        </div>
       </div>
-    </>
+      <Card>
+        <CardBody>
+          <div className="table-responsive index-table">
+            <table className="table table-striped mb-0">
+              <thead className="table-light table-nowrap">
+                <tr role="row">
+                  <th style={{ minWidth: "50px" }}>SL</th>
+                  <th style={{ minWidth: "200px" }}>
+                    <div
+                      onClick={() => handleSort("name")}
+                      className="cursor-pointer text-decoration-underline me-1"
+                      style={{ cursor: "pointer", minWidth: "200px" }}
+                    >
+                      Name
+                      <i
+                        className={
+                          searchFields.sortBy === "name"
+                            ? searchFields.sortOrder === "ASC"
+                              ? "ri-sort-asc ms-1"
+                              : "ri-sort-desc ms-1"
+                            : "d-none"
+                        }
+                      ></i>
+                    </div>
+                  </th>
+                  <th style={{ minWidth: "200px" }}>Phone</th>
+                  <th style={{ minWidth: "200px" }}>Email</th>
+                  <th style={{ minWidth: "220px" }}>Specialest</th>
+                  <th style={{ minWidth: "200px" }}>Institute</th>
+                  <th style={{ minWidth: "200px" }}>Title</th>
+                  <th style={{ minWidth: "200px" }}>District</th>
+                  <th style={{ minWidth: "220px" }}>Sub-district</th>
+                  <th style={{ minWidth: "200px" }}>Status</th>
+                  <th style={{ minWidth: "290px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td></td>
+                  <td>
+                    <Input
+                      type="text"
+                      name="name"
+                      placeholder="Enter Name"
+                      onChange={handleOnChangeSearch}
+                      value={searchTextFields.name}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </td>
+                  <td>
+                    <Input
+                      type="text"
+                      name="phone"
+                      placeholder="Enter Phone"
+                      onChange={handleOnChangeSearch}
+                      value={searchTextFields.phone}
+                      onKeyDown={handleKeyDown}
+                    />
+                  </td>
+                  <td></td>
+                  <td style={{ minWidth: "220px" }}>
+                    <Select
+                      id="specialest"
+                      value={getValue(
+                        searchFields.specialest_id,
+                        searchFields?.specialest_name
+                      )}
+                      onChange={(e) =>
+                        handleSelectChange(
+                          e,
+                          "specialest_id",
+                          "specialest_name"
+                        )
+                      }
+                      onInputChange={(e, action) =>
+                        handleInputChange(e, action, "specialest_id")
+                      }
+                      isClearable={searchFields?.specialest_id ? true : false}
+                      options={
+                        specialestData?.data?.map((i) => ({
+                          label: i?.name,
+                          value: i?._id,
+                        })) ?? []
+                      }
+                      placeholder="Search sepcialest"
+                      className="select2-selection"
+                      isLoading={specialestFetching}
+                      // isDisabled={subDistrictFetching}
+                    />
+                  </td>
+                  <td>
+                    <Select
+                      id="institute"
+                      value={getValue(
+                        searchFields.institute_id,
+                        searchFields?.institute_name
+                      )}
+                      onChange={(e) =>
+                        handleSelectChange(
+                          e,
+                          "institute_id",
+                          "institute_name",
+                          setInstituteSearchUrl
+                        )
+                      }
+                      onInputChange={(e, action) =>
+                        handleInputChange(
+                          e,
+                          action,
+                          setInstituteSearchUrl,
+                          "institute_id"
+                        )
+                      }
+                      placeholder="Search institute"
+                      isClearable={searchFields?.institute_id ? true : false}
+                      options={
+                        instituteData?.data?.data?.map((i) => ({
+                          label: i?.name,
+                          value: i?._id,
+                        })) ?? []
+                      }
+                      className="select2-selection"
+                      isLoading={instituteFetching}
+                      // isDisabled={subDistrictFetching}
+                    />
+                  </td>
+                  <td>
+                    <Select
+                      id="title"
+                      value={getValue(
+                        searchFields.title_id,
+                        searchFields?.title_name
+                      )}
+                      onChange={(e) =>
+                        handleSelectChange(e, "title_id", "title_name")
+                      }
+                      onInputChange={(e, action) =>
+                        handleInputChange(e, action, "title_id")
+                      }
+                      isClearable={searchFields?.title_id ? true : false}
+                      options={
+                        titlesData?.data?.map((i) => ({
+                          label: i?.name,
+                          value: i?._id,
+                        })) ?? []
+                      }
+                      className="select2-selection"
+                      isLoading={titleFetching}
+                      placeholder="Search Title"
+                      // isDisabled={subDistrictFetching}
+                    />
+                  </td>
+                  <td>
+                    <Select
+                      value={getValue(
+                        searchFields.district_id,
+                        searchFields?.district_name
+                      )}
+                      onChange={(e) => handleSelectChange(e, "district_id")}
+                      onInputChange={(e, action) =>
+                        handleInputChange(
+                          e,
+                          action,
+                          setCountrySearchUrl,
+                          "district_id"
+                        )
+                      }
+                      isClearable={searchFields?.district_id ? true : false}
+                      options={
+                        countriesData?.data?.data?.map((i) => ({
+                          label: i?.name,
+                          value: i?._id,
+                        })) ?? []
+                      }
+                      placeholder="Search district"
+                      className="select2-selection"
+                      isLoading={countryfetching}
+                    />
+                  </td>
+                  <td style={{ minWidth: "220px" }}>
+                    <Select
+                      value={getValue(
+                        searchFields.subDistrict_id,
+                        searchFields?.subDistrict_name
+                      )}
+                      onChange={(e) =>
+                        handleSelectChange(
+                          e,
+                          "subDistrict_id",
+                          "subDistrict_name"
+                        )
+                      }
+                      onInputChange={(e, action) =>
+                        handleInputChange(
+                          e,
+                          action,
+                          setSubDistrictSearchUrl,
+                          "subDistrict_id"
+                        )
+                      }
+                      isClearable={searchFields?.subDistrict_id ? true : false}
+                      options={
+                        subDistrict?.data?.data?.map((i) => ({
+                          label: i?.name,
+                          value: i?._id,
+                        })) ?? []
+                      }
+                      placeholder="Search sub-district"
+                      className="select2-selection"
+                      isLoading={statefetching}
+                    />
+                  </td>
+
+                  <td>
+                    <Input
+                      name="status"
+                      type="select"
+                      onChange={handleOnChangeSearch}
+                      value={searchFields?.status}
+                    >
+                      <option value="">Select Status</option>
+                      {statusList.map((i) => (
+                        <option key={i.value} value={i?.value}>
+                          {i.text}
+                        </option>
+                      ))}
+                    </Input>
+                  </td>
+                  <td>
+                    {lengthSearchField !== 0 && (
+                      <>
+                        <Button
+                          icon="ri-search-line"
+                          size="sm"
+                          color="outline-primary"
+                          outline
+                          onClick={handleSearchSubmit}
+                        >
+                          Search
+                        </Button>
+                        &nbsp;
+                        <Button
+                          icon="ri-close-fill"
+                          size="sm"
+                          color="outline-danger"
+                          outline
+                          onClick={clearSearch}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+
+                {content}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            total={meta?.total}
+            perPage={meta?.limit ? parseInt(meta?.limit) : limit}
+            setPerPage={setLimit}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+          />
+        </CardBody>
+      </Card>
+      {deleteItem?.id && (
+        <SweetAlert
+          deleteItem={deleteItem}
+          onCancel={() => setDeleteItem(null)}
+          onConfirm={() => {
+            deleteCity(deleteItem?.id);
+            setDeleteItem({});
+          }}
+          confirmBtnText="Yes, delete it!"
+        >
+          <p className="text-dark">
+            You want to delete{" "}
+            <strong className="text-dark fs-5">{deleteItem?.name}</strong>{" "}
+            doctor.
+          </p>
+        </SweetAlert>
+      )}
+      {isOpen && (
+        <DoctorModal
+          isOpen={isOpen}
+          editItem={editItem}
+          setEditItem={setEditItem}
+          isFetching={isFetching}
+          setToast={setToast}
+          title={title}
+          setTitle={setTitle}
+          setIsOpen={setIsOpen}
+        />
+      )}
+    </div>
   );
 }
+
+export default ManageDoctors;

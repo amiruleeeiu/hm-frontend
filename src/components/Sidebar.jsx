@@ -3,6 +3,16 @@ import { Link, NavLink } from "react-router-dom";
 import logo from "../assets/images/706.jpg";
 
 export default function Sidebar() {
+  const MENUES = [
+    { title: "Doctor", path: "/doctors" },
+    { title: "Patient", path: "/patients" },
+    { title: "Appointment", path: "/appointments" },
+    { title: "Roles", path: "/roles" },
+    { title: "District", path: "/districts" },
+    { title: "Sub-District", path: "/sub-districts" },
+    { title: "Location", path: "/locations" },
+  ];
+
   return (
     <div className="sidebar">
       <div>
@@ -11,56 +21,20 @@ export default function Sidebar() {
         </Link>
       </div>
       <ul className="sidebar-list list-unstyled">
-        <li>
-          <NavLink
-            to="/doctors"
-            className={({ isActive }) =>
-              isActive
-                ? "text-decoration-none text-white active"
-                : "text-decoration-none text-white"
-            }
-          >
-            Doctors
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/patients" className="text-decoration-none text-white">
-            Patients
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/shedules" className="text-decoration-none text-white">
-            Dr.Shedule
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/appointments"
-            className="text-decoration-none text-white"
-          >
-            Appointments
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/roles" className="text-decoration-none text-white">
-            Roles
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/districts" className="text-decoration-none text-white">
-            District
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/sub-districts" className="text-decoration-none text-white">
-            Sub-District
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/locations" className="text-decoration-none text-white">
-            Location
-          </NavLink>
-        </li>
+        {MENUES.map((menu,index) => (
+          <li key={index}>
+            <NavLink
+              to={menu.path}
+              className={({ isActive }) =>
+                isActive
+                  ? "text-decoration-none text-white active d-flex"
+                  : "text-decoration-none text-white d-flex"
+              }
+            >
+              {menu.title}
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </div>
   );

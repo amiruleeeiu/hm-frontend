@@ -11,7 +11,6 @@ function Pagination({
   isPageShow = true,
 }) {
   const page = Math.ceil(total / perPage);
-  console.log(perPage);
   const handlePage = (e) => {
     e.preventDefault();
 
